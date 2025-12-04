@@ -19,13 +19,14 @@ import com.gos.lib.properties.GosDoubleProperty;
 import com.gos.lib.properties.HeavyDoubleProperty;
 import com.gos.lib.properties.pid.PidProperty;
 import com.thethriftybot.ThriftyNova;
-import com.thethriftybot.ThriftyNova.CurrentType;
 import com.thethriftybot.ThriftyNova.EncoderType;
 import com.thethriftybot.ThriftyNova.MotorType;
 import com.thethriftybot.ThriftyNova.PIDSlot;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogEncoder;
+import frc.robot.util.nova.NovaConfig;
+import frc.robot.util.nova.NovaConfig.BrakeMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -87,75 +88,107 @@ public class ModuleIONova implements ModuleIO {
                 });
 
         // Configure drive motor
-        // NovaConfig driveConfig = new NovaConfig();
-        // driveConfig.setBrakeMode(BrakeMode.BRAKE).setVoltageCompensation(12.0).setUsedPIDSlot(PIDSlot.SLOT0);
-        // driveConfig.limits.setMaxStatorCurrent(driveMotorCurrentLimit).setMaxSupplyCurrent(driveMotorCurrentLimit);
-        // driveConfig.encoder.setUsedEncoder(EncoderType.INTERNAL);
-        // driveConfig.pid0.setPIDF(driveKp, 0.0, driveKd, 0.0);
-        // driveConfig
-        //         .canFreq
-        //         .setSensorPeriod(1 / odometryFrequency)
-        //         .setControlPeriod(0.02)
-        //         .setCurrentPeriod(0.02)
-        //         .setFaultPeriod(0.02);
-        // driveConfig.configure(driveNova);
-
-        driveNova.factoryReset();
-        driveNova
-                .setBrakeMode(true)
-                .setVoltageCompensation(12.0)
-                .usePIDSlot(PIDSlot.SLOT0)
-                .setMaxCurrent(CurrentType.STATOR, driveMotorCurrentLimit)
-                .setMaxCurrent(CurrentType.SUPPLY, driveMotorCurrentLimit)
-                .useEncoderType(EncoderType.INTERNAL)
-                .pid0
-                .setP(driveKp)
-                .setI(0.0)
-                .setD(driveKd)
-                .setFF(0.0);
-        driveNova
+        System.out.println("Configuring drive motor. Module: " + module + "  CAN Id: "
+                + switch (module) {
+                    case 0 -> frontLeftDriveCanId;
+                    case 1 -> frontRightDriveCanId;
+                    case 2 -> backLeftDriveCanId;
+                    case 3 -> backRightDriveCanId;
+                    default -> 0;
+                });
+        NovaConfig driveConfig = new NovaConfig();
+        driveConfig.setBrakeMode(BrakeMode.BRAKE).setVoltageCompensation(12.0).setUsedPIDSlot(PIDSlot.SLOT0);
+        driveConfig.limits.setMaxStatorCurrent(driveMotorCurrentLimit).setMaxSupplyCurrent(driveMotorCurrentLimit);
+        driveConfig.encoder.setUsedEncoder(EncoderType.INTERNAL);
+        driveConfig.pid0.setPIDF(driveKp, 0.0, driveKd, 0.0);
+        driveConfig
                 .canFreq
-                .setSensor(1 / odometryFrequency)
-                .setControl(0.02)
-                .setCurrent(0.02)
-                .setFault(0.02);
-        
-        // Configure turn motor
-        // NovaConfig turnConfig = new NovaConfig();
-        // turnConfig
-        //         .setInversion(turnInverted)
-        //         .setBrakeMode(BrakeMode.BRAKE)
-        //         .setVoltageCompensation(12.0)
-        //         .setUsedPIDSlot(PIDSlot.SLOT0);
-        // turnConfig.limits.setMaxStatorCurrent(turnMotorCurrentLimit).setMaxSupplyCurrent(turnMotorCurrentLimit);
-        // turnConfig.encoder.setUsedEncoder(EncoderType.INTERNAL);//.setAbsoluteWrapping(true)
-        // turnConfig.pid0.setPIDF(turnKp, 0.0, turnKd, 0.0);
-        // turnConfig
-        //         .canFreq
-        //         .setSensorPeriod(1 / odometryFrequency)
-        //         .setControlPeriod(0.02)
-        //         .setCurrentPeriod(0.02)
-        //         .setFaultPeriod(0.02);
-        // turnConfig.configure(turnNova);
+                .setSensorPeriod(1 / odometryFrequency)
+                .setControlPeriod(0.02)
+                .setCurrentPeriod(0.02)
+                .setFaultPeriod(0.02);
+        driveConfig.configure(driveNova);
+        System.out.println("Finished configuring drive motor. Module: " + module + "  CAN Id: "
+                + switch (module) {
+                    case 0 -> frontLeftDriveCanId;
+                    case 1 -> frontRightDriveCanId;
+                    case 2 -> backLeftDriveCanId;
+                    case 3 -> backRightDriveCanId;
+                    default -> 0;
+                });
 
-        turnNova.factoryReset();
-        turnNova.setInversion(turnInverted)
-                .setBrakeMode(true)
+        // driveNova.factoryReset();
+        // driveNova
+        //         .setBrakeMode(true)
+        //         .setVoltageCompensation(12.0)
+        //         .usePIDSlot(PIDSlot.SLOT0)
+        //         .setMaxCurrent(CurrentType.STATOR, driveMotorCurrentLimit)
+        //         .setMaxCurrent(CurrentType.SUPPLY, driveMotorCurrentLimit)
+        //         .useEncoderType(EncoderType.INTERNAL)
+        //         .pid0
+        //         .setP(driveKp)
+        //         .setI(0.0)
+        //         .setD(driveKd)
+        //         .setFF(0.0);
+        // driveNova
+        //         .canFreq
+        //         .setSensor(1 / odometryFrequency)
+        //         .setControl(0.02)
+        //         .setCurrent(0.02)
+        //         .setFault(0.02);
+
+        // Configure turn motor
+        System.out.println("Configuring Turn motor. Module: " + module + "  CAN Id: "
+                + switch (module) {
+                    case 0 -> frontLeftTurnCanId;
+                    case 1 -> frontRightTurnCanId;
+                    case 2 -> backLeftTurnCanId;
+                    case 3 -> backRightTurnCanId;
+                    default -> 0;
+                });
+        NovaConfig turnConfig = new NovaConfig();
+        turnConfig
+                .setInversion(turnInverted)
+                .setBrakeMode(BrakeMode.BRAKE)
                 .setVoltageCompensation(12.0)
-                .usePIDSlot(PIDSlot.SLOT0)
-                .setMaxCurrent(CurrentType.STATOR, turnMotorCurrentLimit)
-                .setMaxCurrent(CurrentType.SUPPLY, turnMotorCurrentLimit)
-                .useEncoderType(EncoderType.INTERNAL)
-                .pid0
-                .setP(turnKp)
-                .setI(0.0)
-                .setD(turnKd)
-                .setFF(0.0);
-        turnNova.canFreq
-                .setSensor(1 / odometryFrequency)
-                .setControl(0.02)
-                .setCurrent(0.02)
-                .setFault(0.02);
+                .setUsedPIDSlot(PIDSlot.SLOT0);
+        turnConfig.limits.setMaxStatorCurrent(turnMotorCurrentLimit).setMaxSupplyCurrent(turnMotorCurrentLimit);
+        turnConfig.encoder.setUsedEncoder(EncoderType.INTERNAL); // .setAbsoluteWrapping(true)
+        turnConfig.pid0.setPIDF(turnKp, 0.0, turnKd, 0.0);
+        turnConfig
+                .canFreq
+                .setSensorPeriod(1 / odometryFrequency)
+                .setControlPeriod(0.02)
+                .setCurrentPeriod(0.02)
+                .setFaultPeriod(0.02);
+        turnConfig.configure(turnNova);
+        System.out.println("Finished configuring Turn motor. Module: " + module + "  CAN Id: "
+                + switch (module) {
+                    case 0 -> frontLeftTurnCanId;
+                    case 1 -> frontRightTurnCanId;
+                    case 2 -> backLeftTurnCanId;
+                    case 3 -> backRightTurnCanId;
+                    default -> 0;
+                });
+
+        // turnNova.factoryReset();
+        // turnNova.setInversion(turnInverted)
+        //         .setBrakeMode(true)
+        //         .setVoltageCompensation(12.0)
+        //         .usePIDSlot(PIDSlot.SLOT0)
+        //         .setMaxCurrent(CurrentType.STATOR, turnMotorCurrentLimit)
+        //         .setMaxCurrent(CurrentType.SUPPLY, turnMotorCurrentLimit)
+        //         .useEncoderType(EncoderType.INTERNAL)
+        //         .pid0
+        //         .setP(turnKp)
+        //         .setI(0.0)
+        //         .setD(turnKd)
+        //         .setFF(0.0);
+        // turnNova.canFreq
+        //         .setSensor(1 / odometryFrequency)
+        //         .setControl(0.02)
+        //         .setCurrent(0.02)
+        //         .setFault(0.02);
 
         // Create odometry queues
         timestampQueue = NovaOdometryThread.getInstance().makeTimestampQueue();
