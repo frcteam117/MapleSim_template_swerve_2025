@@ -1,7 +1,7 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2025.3.2"
-    id "com.peterabeles.gversion" version "1.10"
+    id "com.peterabeles.gversion" version "1.10.3"
     id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
@@ -196,8 +196,8 @@ spotless {
             exclude '**/build/**', '**/build-*/**'
         }
         toggleOffOn()
-        palantirJavaFormat('2.39.0').formatJavadoc(true)
-        removeUnusedImports()
+        googleJavaFormat()
+        // removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
     }
