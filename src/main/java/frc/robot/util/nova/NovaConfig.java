@@ -30,9 +30,17 @@ public class NovaConfig extends NovaBaseConfig {
     return this;
   }
 
+  public boolean getInversion() {
+    return (boolean) getParameter(NovaParameter.INVERTED.value);
+  }
+
   public NovaConfig setVoltageCompensation(double vcomp) {
     putParameter(NovaParameter.VOLTAGE_COMP.value, vcomp);
     return this;
+  }
+
+  public double getVoltageCompensation() {
+    return (double) getParameter(NovaParameter.VOLTAGE_COMP.value);
   }
 
   public NovaConfig setBrakeMode(BrakeMode brakeMode) {
@@ -40,9 +48,17 @@ public class NovaConfig extends NovaBaseConfig {
     return this;
   }
 
+  public BrakeMode getBrakeMode() {
+    return (BrakeMode) getParameter(NovaParameter.BRAKE_MODE.value);
+  }
+
   public NovaConfig setTemperatureThrottleEnable(boolean isEnabled) {
     putParameter(NovaParameter.TEMP_THROTTLE.value, isEnabled);
     return this;
+  }
+
+  public boolean getTemperatureThrottleEnable() {
+    return (boolean) getParameter(NovaParameter.TEMP_THROTTLE.value);
   }
 
   public NovaConfig setUsedPIDSlot(PIDSlot pidSlot) {
@@ -50,15 +66,27 @@ public class NovaConfig extends NovaBaseConfig {
     return this;
   }
 
+  public PIDSlot getUsedPIDSlot() {
+    return (PIDSlot) getParameter(NovaParameter.PID_SLOT.value);
+  }
+
   public NovaConfig setNTLogging(boolean isEnabled) {
     putParameter(NovaParameter.NT_LOGGING.value, isEnabled);
     return this;
+  }
+
+  public boolean getNTLogging() {
+    return (boolean) getParameter(NovaParameter.NT_LOGGING.value);
   }
 
   /** Defaults to resetting the ThriftyNova when configured (true) */
   public NovaConfig setFactoryReset(boolean willReset) {
     putParameter(NovaParameter.FACTORY_RESET.value, willReset);
     return this;
+  }
+
+  public boolean getFactoryReset() {
+    return (boolean) getParameter(NovaParameter.FACTORY_RESET.value);
   }
 
   /** Updates depend on the fault status frame */

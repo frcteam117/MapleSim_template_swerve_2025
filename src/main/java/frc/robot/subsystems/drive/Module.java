@@ -52,8 +52,9 @@ public class Module {
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
       double positionMeters = inputs.odometryDrivePositions_rad[i] * wheelRadius_m;
-      Rotation2d angle = inputs.odometryTurnPositions[i];
-      odometryPositions[i] = new SwerveModulePosition(positionMeters, angle);
+      double angle_rad = inputs.odometryTurnPositions_rad[i];
+      odometryPositions[i] =
+          new SwerveModulePosition(positionMeters, Rotation2d.fromRadians(angle_rad));
     }
 
     // Update alerts
@@ -64,31 +65,31 @@ public class Module {
   /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
   public void runSetpoint(SwerveModuleState state) {
     // Optimize velocity setpoint
-    state.optimize(getAngle());
-    state.cosineScale(inputs.turnPosition);
+    state.optimize(Rotation2d.fromRadians(getAngle()));
+    state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
 
     // Apply setpoints
     io.setNextDriveVelocity(state.speedMetersPerSecond / wheelRadius_m);
-    io.setNextTurnPosition(state.angle);
+    io.setNextTurnPosition(state.angle.getRadians());
   }
 
   /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
   public void setNextState(SwerveModuleState state, double acceleration_mps2) {
     // Optimize velocity setpoint
-    state.optimize(getAngle());
-    state.cosineScale(inputs.turnPosition);
+    state.optimize(Rotation2d.fromRadians(getAngle()));
+    state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
 
     // Apply setpoints
     io.setNextDriveState(
         state.speedMetersPerSecond / wheelRadius_m,
-        state.angle.minus(getAngle()).getCos() * acceleration_mps2 / wheelRadius_m);
-    io.setNextTurnPosition(state.angle);
+        Math.cos(state.angle.getRadians() - getAngle()) * acceleration_mps2 / wheelRadius_m);
+    io.setNextTurnPosition(state.angle.getRadians());
   }
 
   /** Runs the module with the specified voltage while controlling to zero degrees. */
   public void runCharacterization(double voltage_V) {
     io.setDriveVoltage(voltage_V);
-    io.setNextTurnPosition(new Rotation2d());
+    io.setNextTurnPosition(0.0);
   }
 
   /** Disables all outputs to motors. */
@@ -97,9 +98,9 @@ public class Module {
     io.setTurnVoltage(0.0);
   }
 
-  /** Returns the current turn angle of the module. */
-  public Rotation2d getAngle() {
-    return inputs.turnPosition;
+  /** Returns the current turn angle of the module in radians. */
+  public double getAngle() {
+    return inputs.turnPosition_rad;
   }
 
   /** Returns the current drive position of the module in meters. */
@@ -114,12 +115,12 @@ public class Module {
 
   /** Returns the module position (turn angle and drive position). */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(getPositionMeters(), getAngle());
+    return new SwerveModulePosition(getPositionMeters(), Rotation2d.fromRadians(getAngle()));
   }
 
   /** Returns the module state (turn angle and drive velocity). */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
+    return new SwerveModuleState(getVelocityMetersPerSec(), Rotation2d.fromRadians(getAngle()));
   }
 
   /** Returns the module positions received this cycle. */

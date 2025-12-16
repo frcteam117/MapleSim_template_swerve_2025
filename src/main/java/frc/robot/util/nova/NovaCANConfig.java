@@ -2,29 +2,49 @@ package frc.robot.util.nova;
 
 public class NovaCANConfig extends NovaBaseConfig {
 
-  public NovaCANConfig setFaultPeriod(double period_S) {
-    putParameter(NovaParameter.FREQ_FAULT.value, period_S);
+  public NovaCANConfig setFaultPeriod(double period_s) {
+    putParameter(NovaParameter.FREQ_FAULT.value, period_s);
     return this;
   }
 
-  public NovaCANConfig setSensorPeriod(double period_S) {
-    putParameter(NovaParameter.FREQ_SENSOR.value, period_S);
+  public double getFaultPeriod() {
+    return (double) getParameter(NovaParameter.FREQ_FAULT.value);
+  }
+
+  public NovaCANConfig setSensorPeriod(double period_s) {
+    putParameter(NovaParameter.FREQ_SENSOR.value, period_s);
     return this;
   }
 
-  public NovaCANConfig setQuadSensorPeriod(double period_S) {
-    putParameter(NovaParameter.FREQ_QUAD_SENSOR.value, period_S);
+  public double getSensorPeriod() {
+    return (double) getParameter(NovaParameter.FREQ_SENSOR.value);
+  }
+
+  public NovaCANConfig setQuadSensorPeriod(double period_s) {
+    putParameter(NovaParameter.FREQ_QUAD_SENSOR.value, period_s);
     return this;
   }
 
-  public NovaCANConfig setControlPeriod(double period_S) {
-    putParameter(NovaParameter.FREQ_CONTROL.value, period_S);
+  public double getQuadSensorPeriod() {
+    return (double) getParameter(NovaParameter.FREQ_QUAD_SENSOR.value);
+  }
+
+  public NovaCANConfig setControlPeriod(double period_s) {
+    putParameter(NovaParameter.FREQ_CONTROL.value, period_s);
     return this;
   }
 
-  public NovaCANConfig setCurrentPeriod(double period_S) {
-    putParameter(NovaParameter.FREQ_CURRENT.value, period_S);
+  public double getControlPeriod() {
+    return (double) getParameter(NovaParameter.FREQ_CONTROL.value);
+  }
+
+  public NovaCANConfig setCurrentPeriod(double period_s) {
+    putParameter(NovaParameter.FREQ_CURRENT.value, period_s);
     return this;
+  }
+
+  public double getCurrentPeriod() {
+    return (double) getParameter(NovaParameter.FREQ_CURRENT.value);
   }
 
   public NovaCANConfig apply(NovaCANConfig config) {

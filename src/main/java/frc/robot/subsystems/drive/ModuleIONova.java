@@ -16,13 +16,9 @@ package frc.robot.subsystems.drive;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.thethriftybot.ThriftyNova;
-import com.thethriftybot.ThriftyNova.EncoderType;
 import com.thethriftybot.ThriftyNova.MotorType;
-import com.thethriftybot.ThriftyNova.PIDSlot;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogEncoder;
-import frc.robot.util.nova.NovaConfig;
-import frc.robot.util.nova.NovaConfig.BrakeMode;
+import frc.robot.util.UnitUtil;
 import java.util.Queue;
 
 /**
@@ -30,17 +26,13 @@ import java.util.Queue;
  * controller, and Thrifty absolute encoder.
  */
 public class ModuleIONova implements ModuleIO {
-  private final Rotation2d zeroRotation;
+  private final double zeroRotation_rad;
 
   // Motion profiling
-  private double driveVelocity_radPs = 0;
-  private double lastNextVelocity_radPs = 0;
+  private double currentDriveVelocity_radPs = 0.0;
+  private double lastNextDriveVelocity_radPs = 0.0;
 
-  private Rotation2d turnPosition = new Rotation2d();
-
-  // Editable pids
-  // private final PidProperty drivePIDProperty;
-  // private final PidProperty turnPIDProperty;
+  private double turnPosition_rad = 0.0;
 
   // Hardware objects
   private final ThriftyNova driveNova;
@@ -53,209 +45,46 @@ public class ModuleIONova implements ModuleIO {
   private final Queue<Double> turnPositionQueue;
 
   public ModuleIONova(int module) {
-    zeroRotation =
-        switch (module) {
-          case 0 -> frontLeftZeroRotation;
-          case 1 -> frontRightZeroRotation;
-          case 2 -> backLeftZeroRotation;
-          case 3 -> backRightZeroRotation;
-          default -> new Rotation2d();
-        };
-    driveNova =
-        new ThriftyNova(
-            switch (module) {
-              case 0 -> frontLeftDriveCanId;
-              case 1 -> frontRightDriveCanId;
-              case 2 -> backLeftDriveCanId;
-              case 3 -> backRightDriveCanId;
-              default -> 0;
-            },
-            MotorType.NEO);
-    turnNova =
-        new ThriftyNova(
-            switch (module) {
-              case 0 -> frontLeftTurnCanId;
-              case 1 -> frontRightTurnCanId;
-              case 2 -> backLeftTurnCanId;
-              case 3 -> backRightTurnCanId;
-              default -> 0;
-            },
-            MotorType.NEO);
-    turnEncoder =
-        new AnalogEncoder(
-            switch (module) {
-              case 0 -> frontLeftEncoderPort;
-              case 1 -> frontRightEncoderPort;
-              case 2 -> backLeftEncoderPort;
-              case 3 -> backRightEncoderPort;
-              default -> 0;
-            });
+    zeroRotation_rad = AbsEncoder.zeroRotations_rad[module];
+    driveNova = new ThriftyNova(DriveMotor.canIds[module], MotorType.NEO);
+    turnNova = new ThriftyNova(TurnMotor.canIds[module], MotorType.NEO);
+    turnEncoder = new AnalogEncoder(AbsEncoder.analogPorts[module]);
 
     // Configure drive motor
     System.out.println(
-        "Configuring drive motor. Module: "
-            + module
-            + "  CAN Id: "
-            + switch (module) {
-              case 0 -> frontLeftDriveCanId;
-              case 1 -> frontRightDriveCanId;
-              case 2 -> backLeftDriveCanId;
-              case 3 -> backRightDriveCanId;
-              default -> 0;
-            });
-    NovaConfig driveConfig = new NovaConfig();
-    driveConfig
-        .setBrakeMode(BrakeMode.COAST)
-        .setVoltageCompensation(12.0)
-        .setUsedPIDSlot(PIDSlot.SLOT0);
-    driveConfig
-        .limits
-        .setMaxStatorCurrent(DriveMotor.stallLimit_A)
-        .setMaxSupplyCurrent(DriveMotor.stallLimit_A);
-    driveConfig.encoder.setUsedEncoder(EncoderType.INTERNAL);
-    driveConfig.pid0.setPIDF(DriveMotor.realPID.getP(), 0.0, DriveMotor.realPID.getD(), 0.0);
-    driveConfig
-        .canFreq
-        .setSensorPeriod(1 / odometryFrequency_Hz)
-        .setControlPeriod(0.02)
-        .setCurrentPeriod(0.02)
-        .setFaultPeriod(0.02);
-    driveConfig.configure(driveNova);
+        "Configuring drive motor. Module: " + module + "  CAN Id: " + DriveMotor.canIds[module]);
+    DriveMotor.config.configure(driveNova);
     System.out.println(
         "Finished configuring drive motor. Module: "
             + module
             + "  CAN Id: "
-            + switch (module) {
-              case 0 -> frontLeftDriveCanId;
-              case 1 -> frontRightDriveCanId;
-              case 2 -> backLeftDriveCanId;
-              case 3 -> backRightDriveCanId;
-              default -> 0;
-            });
-
-    // driveNova.factoryReset();
-    // driveNova
-    //         .setBrakeMode(true)
-    //         .setVoltageCompensation(12.0)
-    //         .usePIDSlot(PIDSlot.SLOT0)
-    //         .setMaxCurrent(CurrentType.STATOR, driveMotorCurrentLimit)
-    //         .setMaxCurrent(CurrentType.SUPPLY, driveMotorCurrentLimit)
-    //         .useEncoderType(EncoderType.INTERNAL)
-    //         .pid0
-    //         .setP(driveKp)
-    //         .setI(0.0)
-    //         .setD(driveKd)
-    //         .setFF(0.0);
-    // driveNova
-    //         .canFreq
-    //         .setSensor(1 / odometryFrequency)
-    //         .setControl(0.02)
-    //         .setCurrent(0.02)
-    //         .setFault(0.02);
+            + DriveMotor.canIds[module]);
 
     // Configure turn motor
     System.out.println(
-        "Configuring Turn motor. Module: "
-            + module
-            + "  CAN Id: "
-            + switch (module) {
-              case 0 -> frontLeftTurnCanId;
-              case 1 -> frontRightTurnCanId;
-              case 2 -> backLeftTurnCanId;
-              case 3 -> backRightTurnCanId;
-              default -> 0;
-            });
-    NovaConfig turnConfig = new NovaConfig();
-    turnConfig
-        .setInversion(TurnMotor.inverted)
-        .setBrakeMode(BrakeMode.BRAKE)
-        .setVoltageCompensation(12.0)
-        .setUsedPIDSlot(PIDSlot.SLOT0);
-    turnConfig
-        .limits
-        .setMaxStatorCurrent(TurnMotor.currentLimit_A)
-        .setMaxSupplyCurrent(TurnMotor.currentLimit_A);
-    turnConfig.encoder.setUsedEncoder(EncoderType.INTERNAL); // .setAbsoluteWrapping(true)
-    turnConfig.pid0.setPIDF(TurnMotor.realPID.getP(), 0.0, TurnMotor.realPID.getD(), 0.0);
-    turnConfig
-        .canFreq
-        .setSensorPeriod(1 / odometryFrequency_Hz)
-        .setControlPeriod(0.02)
-        .setCurrentPeriod(0.02)
-        .setFaultPeriod(0.02);
-    turnConfig.configure(turnNova);
+        "Configuring Turn motor. Module: " + module + "  CAN Id: " + TurnMotor.canIds[module]);
+    TurnMotor.config.configure(turnNova);
     System.out.println(
         "Finished configuring Turn motor. Module: "
             + module
             + "  CAN Id: "
-            + switch (module) {
-              case 0 -> frontLeftTurnCanId;
-              case 1 -> frontRightTurnCanId;
-              case 2 -> backLeftTurnCanId;
-              case 3 -> backRightTurnCanId;
-              default -> 0;
-            });
-
-    // turnNova.factoryReset();
-    // turnNova.setInversion(turnInverted)
-    //         .setBrakeMode(true)
-    //         .setVoltageCompensation(12.0)
-    //         .usePIDSlot(PIDSlot.SLOT0)
-    //         .setMaxCurrent(CurrentType.STATOR, turnMotorCurrentLimit)
-    //         .setMaxCurrent(CurrentType.SUPPLY, turnMotorCurrentLimit)
-    //         .useEncoderType(EncoderType.INTERNAL)
-    //         .pid0
-    //         .setP(turnKp)
-    //         .setI(0.0)
-    //         .setD(turnKd)
-    //         .setFF(0.0);
-    // turnNova.canFreq
-    //         .setSensor(1 / odometryFrequency)
-    //         .setControl(0.02)
-    //         .setCurrent(0.02)
-    //         .setFault(0.02);
+            + TurnMotor.canIds[module]);
 
     // Create odometry queues
     timestampQueue = NovaOdometryThread.getInstance().makeTimestampQueue();
     drivePositionQueue =
         NovaOdometryThread.getInstance().registerSignal(driveNova::getPositionInternal);
     turnPositionQueue = NovaOdometryThread.getInstance().registerSignal(turnEncoder::get);
-
-    // Create editable pid values
-    // List<HeavyDoubleProperty> turnPIDProperties = new ArrayList<>();
-    // turnPIDProperties.add(new HeavyDoubleProperty(
-    //         (p) -> turnNova.pid0.setP(p), new GosDoubleProperty(false, "turnPID/kp", 0.07)));
-    // turnPIDProperties.add(
-    //         new HeavyDoubleProperty((i) -> turnNova.pid0.setI(i), new GosDoubleProperty(false,
-    // "turnPID/ki",
-    // 0.0)));
-    // turnPIDProperties.add(
-    //         new HeavyDoubleProperty((d) -> turnNova.pid0.setD(d), new GosDoubleProperty(false,
-    // "turnPID/kd",
-    // 0.0)));
-    // turnPIDProperties.add(new HeavyDoubleProperty(
-    //         (ff) -> turnNova.pid0.setFF(ff), new GosDoubleProperty(false, "turnPID/kff", 0.0)));
-    // turnPIDProperty = new PidProperty(turnPIDProperties);
-
-    // List<HeavyDoubleProperty> drivePIDProperties = new ArrayList<>();
-    // drivePIDProperties.add(new HeavyDoubleProperty(
-    //         (p) -> driveNova.pid0.setP(p), new GosDoubleProperty(false, "drivePID/kp", 0.07)));
-    // drivePIDProperties.add(new HeavyDoubleProperty(
-    //         (i) -> driveNova.pid0.setI(i), new GosDoubleProperty(false, "drivePID/ki", 0.0)));
-    // drivePIDProperties.add(new HeavyDoubleProperty(
-    //         (d) -> driveNova.pid0.setD(d), new GosDoubleProperty(false, "drivePID/kd", 0.0)));
-    // drivePIDProperties.add(new HeavyDoubleProperty(
-    //         (ff) -> driveNova.pid0.setFF(ff),
-    //         new GosDoubleProperty(false, "drivePID/kff", 1.0 / driveEncoderPositionFactor * 4)));
-    // drivePIDProperty = new PidProperty(drivePIDProperties);
   }
 
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
     // Update drive inputs
-    inputs.drivePosition_rad = driveNova.getPositionInternal() * DriveMotor.encoderPositionFactor;
-    inputs.driveVelocity_radps = driveNova.getVelocityInternal() * DriveMotor.encoderVelocityFactor;
-    driveVelocity_radPs = inputs.driveVelocity_radps;
+    inputs.drivePosition_rad =
+        UnitUtil.rotTorad(driveNova.getPositionInternal() / DriveMotor.reduction);
+    inputs.driveVelocity_radps =
+        UnitUtil.RPMToradPs(driveNova.getVelocityInternal()) / DriveMotor.reduction;
+    currentDriveVelocity_radPs = inputs.driveVelocity_radps;
     inputs.driveVoltage_V = driveNova.getVoltage();
     inputs.driveStatorCurrent_A = driveNova.getStatorCurrent();
     inputs.driveSupplyCurrent_A = driveNova.getSupplyCurrent();
@@ -263,16 +92,12 @@ public class ModuleIONova implements ModuleIO {
 
     // Update turn inputs
     // sparkStickyFault = false;
-    inputs.turnAbsolutePosition =
-        Rotation2d.fromRadians(turnEncoder.get() * TurnMotor.turnAbsEncoderPositionFactor)
-            .minus(zeroRotation);
-    turnPosition = inputs.turnAbsolutePosition;
-    inputs.turnPosition =
-        Rotation2d.fromRadians(turnNova.getPositionInternal() * TurnMotor.turnEncoderPositionFactor)
-            .minus(zeroRotation);
-    // deltaAngle = inputs.turnPosition.minus(inputs.turnAbsolutePosition);
-    inputs.turnVelocity_radps =
-        turnNova.getVelocityInternal() * TurnMotor.turnEncoderVelocityFactor;
+    inputs.turnAbsolutePosition_rad = UnitUtil.rotTorad(turnEncoder.get()) - zeroRotation_rad;
+    turnPosition_rad = inputs.turnAbsolutePosition_rad;
+    inputs.turnPosition_rad =
+        UnitUtil.rotTorad(turnNova.getPositionInternal() / TurnMotor.reduction) - zeroRotation_rad;
+    inputs.turnVelocity_radPs =
+        UnitUtil.RPMToradPs(turnNova.getVelocityInternal() / TurnMotor.reduction);
     inputs.turnVoltage_V = turnNova.getVoltage();
     inputs.turnStatorCurrent_A = turnNova.getStatorCurrent();
     inputs.turnSupplyCurrent_A = turnNova.getSupplyCurrent();
@@ -283,22 +108,15 @@ public class ModuleIONova implements ModuleIO {
         timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryDrivePositions_rad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> value * DriveMotor.encoderPositionFactor)
+            .mapToDouble((Double value) -> UnitUtil.rotTorad(value / DriveMotor.reduction))
             .toArray();
-    inputs.odometryTurnPositions =
+    inputs.odometryTurnPositions_rad =
         turnPositionQueue.stream()
-            .map(
-                (Double value) ->
-                    new Rotation2d(value * TurnMotor.turnAbsEncoderPositionFactor)
-                        .minus(zeroRotation))
-            .toArray(Rotation2d[]::new);
+            .mapToDouble((Double value) -> UnitUtil.rotTorad(value) - zeroRotation_rad)
+            .toArray();
     timestampQueue.clear();
     drivePositionQueue.clear();
     turnPositionQueue.clear();
-
-    // Update pids
-    // drivePIDProperty.updateIfChanged();
-    // turnPIDProperty.updateIfChanged();
   }
 
   @Override
@@ -314,25 +132,23 @@ public class ModuleIONova implements ModuleIO {
   @Override
   public void setNextDriveVelocity(double nextVelocity_radPs) {
     driveNova.setVoltage(
-        DriveMotor.realFF.calculateWithVelocities(driveVelocity_radPs, nextVelocity_radPs)
-            + DriveMotor.realPID.calculate(driveVelocity_radPs, lastNextVelocity_radPs));
-    lastNextVelocity_radPs = nextVelocity_radPs;
-    // double ffVolts = Math.copySign(driveKs, nextVelocity_radps) + driveKv * nextVelocity_radps;
-    // driveNova.setVelocityInternal(nextVelocity_radps, ffVolts);
+        DriveMotor.realFF.calculateWithVelocities(currentDriveVelocity_radPs, nextVelocity_radPs)
+            + DriveMotor.realPID.calculate(
+                currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
+    lastNextDriveVelocity_radPs = nextVelocity_radPs;
   }
 
   @Override
   public void setNextDriveState(double nextVelocity_radPs, double nextAcceleration_radPs2) {
     driveNova.setVoltage(
-        DriveMotor.realFF.calculateWithVelocities(
-                nextVelocity_radPs - 0.02 * nextAcceleration_radPs2, nextVelocity_radPs)
-            + DriveMotor.realPID.calculate(driveVelocity_radPs, lastNextVelocity_radPs));
-    lastNextVelocity_radPs = nextVelocity_radPs;
+        DriveMotor.realFF.calculate(nextVelocity_radPs, nextAcceleration_radPs2)
+            + DriveMotor.realPID.calculate(
+                currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
+    lastNextDriveVelocity_radPs = nextVelocity_radPs;
   }
 
   @Override
-  public void setNextTurnPosition(Rotation2d rotation) {
-    turnNova.setVoltage(
-        TurnMotor.realPID.calculate(turnPosition.getRadians(), rotation.getRadians()));
+  public void setNextTurnPosition(double rotation_rad) {
+    turnNova.setVoltage(TurnMotor.realPID.calculate(turnPosition_rad, rotation_rad));
   }
 }

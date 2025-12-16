@@ -14,9 +14,7 @@
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.drive.DriveConstants.*;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.drive.DriveConstants.DriveMotor;
 import frc.robot.subsystems.drive.DriveConstants.TurnMotor;
 import frc.robot.util.SparkUtil;
@@ -43,11 +41,11 @@ public class ModuleIOSim implements ModuleIO {
     this.driveMotor =
         moduleSimulation
             .useGenericMotorControllerForDrive()
-            .withCurrentLimit(Amps.of(DriveMotor.stallLimit_A));
+            .withCurrentLimit(Amps.of(DriveMotor.config.limits.getMaxStatorCurrent()));
     this.turnMotor =
         moduleSimulation
             .useGenericControllerForSteer()
-            .withCurrentLimit(Amps.of(TurnMotor.currentLimit_A));
+            .withCurrentLimit(Amps.of(TurnMotor.config.limits.getMaxSupplyCurrent()));
   }
 
   @Override
@@ -84,8 +82,8 @@ public class ModuleIOSim implements ModuleIO {
 
     // Update turn inputs
     inputs.turnConnected = true;
-    inputs.turnPosition = moduleSimulation.getSteerAbsoluteFacing();
-    inputs.turnVelocity_radps =
+    inputs.turnPosition_rad = moduleSimulation.getSteerAbsoluteFacing().getRadians();
+    inputs.turnVelocity_radPs =
         moduleSimulation.getSteerAbsoluteEncoderSpeed().in(RadiansPerSecond);
     inputs.turnVoltage_V = turnAppliedVolts;
     inputs.turnStatorCurrent_A = Math.abs(moduleSimulation.getSteerMotorStatorCurrent().in(Amps));
@@ -97,7 +95,10 @@ public class ModuleIOSim implements ModuleIO {
         Arrays.stream(moduleSimulation.getCachedDriveWheelFinalPositions())
             .mapToDouble(angle -> angle.in(Radians))
             .toArray();
-    inputs.odometryTurnPositions = moduleSimulation.getCachedSteerAbsolutePositions();
+    inputs.odometryTurnPositions_rad =
+        Arrays.stream(moduleSimulation.getCachedSteerAbsolutePositions())
+            .mapToDouble((rotation) -> rotation.getRadians())
+            .toArray();
   }
 
   @Override
@@ -127,8 +128,8 @@ public class ModuleIOSim implements ModuleIO {
   }
 
   @Override
-  public void setNextTurnPosition(Rotation2d rotation) {
+  public void setNextTurnPosition(double rotation_rad) {
     turnClosedLoop = true;
-    rotationSetpoint_rad = rotation.getRadians();
+    rotationSetpoint_rad = rotation_rad;
   }
 }

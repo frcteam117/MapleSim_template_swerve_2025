@@ -65,7 +65,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   // Kinematics
   private final SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
-  private Rotation2d rawGyroRotation = new Rotation2d();
+  private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private final SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -79,15 +79,15 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   // Motion Profiling
   private final SwerveSetpointGenerator swerveSetpointGenerator =
-      new SwerveSetpointGenerator(ppConfig, maxSpeed_mPs / driveBaseRadius);
+      new SwerveSetpointGenerator(ppConfig, maxSpeed_mPs / driveBaseRadius_m);
   private SwerveSetpoint lastSetpoint =
       new SwerveSetpoint(
           new ChassisSpeeds(),
           new SwerveModuleState[] {
-            new SwerveModuleState(0, new Rotation2d()),
-            new SwerveModuleState(0, new Rotation2d()),
-            new SwerveModuleState(0, new Rotation2d()),
-            new SwerveModuleState(0, new Rotation2d())
+            new SwerveModuleState(0, Rotation2d.kZero),
+            new SwerveModuleState(0, Rotation2d.kZero),
+            new SwerveModuleState(0, Rotation2d.kZero),
+            new SwerveModuleState(0, Rotation2d.kZero)
           },
           new DriveFeedforwards(
               new double[] {0, 0, 0, 0},
@@ -199,7 +199,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
       } else {
         // Use the angle delta from the kinematics and module deltas
         Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+        rawGyroRotation = rawGyroRotation.plus(Rotation2d.fromRadians(twist.dtheta));
       }
 
       // Apply update
@@ -371,6 +371,6 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
-    return maxSpeed_mPs / driveBaseRadius;
+    return maxSpeed_mPs / driveBaseRadius_m;
   }
 }

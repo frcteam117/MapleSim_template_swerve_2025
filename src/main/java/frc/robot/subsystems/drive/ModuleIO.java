@@ -13,7 +13,6 @@
 
 package frc.robot.subsystems.drive;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
@@ -26,18 +25,18 @@ public interface ModuleIO {
     public double driveStatorCurrent_A = 0.0;
     public double driveSupplyCurrent_A = 0.0;
 
-    public Rotation2d turnAbsolutePosition = new Rotation2d();
+    public double turnAbsolutePosition_rad = 0.0;
 
     public boolean turnConnected = false;
-    public Rotation2d turnPosition = new Rotation2d();
-    public double turnVelocity_radps = 0.0;
+    public double turnPosition_rad = 0.0;
+    public double turnVelocity_radPs = 0.0;
     public double turnVoltage_V = 0.0;
     public double turnStatorCurrent_A = 0.0;
     public double turnSupplyCurrent_A = 0.0;
 
     public double[] odometryTimestamps = new double[] {};
     public double[] odometryDrivePositions_rad = new double[] {};
-    public Rotation2d[] odometryTurnPositions = new Rotation2d[] {};
+    public double[] odometryTurnPositions_rad = new double[] {};
   }
 
   /** Updates the set of loggable inputs. */
@@ -57,5 +56,5 @@ public interface ModuleIO {
       double nextVelocity_radPs, double nextAcceleration_radPs2) {}
 
   /** Runs the turn motor at the next pidf voltage based on the given velocity. */
-  public default void setNextTurnPosition(Rotation2d rotation) {}
+  public default void setNextTurnPosition(double rotation_rad) {}
 }

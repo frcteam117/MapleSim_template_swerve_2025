@@ -14,21 +14,23 @@
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.nominalVoltage_V;
 import static frc.robot.Constants.robotPeriod_s;
 
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import frc.robot.util.logging.TunableDouble;
+import frc.robot.util.nova.NovaConfig;
+import frc.robot.util.nova.NovaConfig.BrakeMode;
 import org.ironmaple.simulation.drivesims.COTS;
 import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
-import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class DriveConstants {
   public static final String name = "Drive";
@@ -39,7 +41,7 @@ public class DriveConstants {
   public static final double odometryFrequency_Hz = 100.0;
   public static final double trackWidth_m = Units.inchesToMeters(21.625 - (2 * 1.6875));
   public static final double wheelBase_m = Units.inchesToMeters(21.625 - (2 * 1.6875));
-  public static final double driveBaseRadius = Math.hypot(trackWidth_m / 2.0, wheelBase_m / 2.0);
+  public static final double driveBaseRadius_m = Math.hypot(trackWidth_m / 2.0, wheelBase_m / 2.0);
   public static final Translation2d[] moduleTranslations =
       new Translation2d[] {
         new Translation2d(trackWidth_m / 2.0, wheelBase_m / 2.0),
@@ -48,43 +50,26 @@ public class DriveConstants {
         new Translation2d(-trackWidth_m / 2.0, -wheelBase_m / 2.0)
       };
 
-  // Zeroed rotation values for each module, see setup instructions
-  public static final Rotation2d frontLeftZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d frontRightZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d backLeftZeroRotation = new Rotation2d(0.0);
-  public static final Rotation2d backRightZeroRotation = new Rotation2d(0.0);
-
-  // Device CAN IDs
-  public static final int pigeonCanId = 9;
-
-  public static final int frontLeftDriveCanId = 3;
-  public static final int backLeftDriveCanId = 1;
-  public static final int frontRightDriveCanId = 5;
-  public static final int backRightDriveCanId = 7;
-
-  public static final int frontLeftTurnCanId = 4;
-  public static final int backLeftTurnCanId = 2;
-  public static final int frontRightTurnCanId = 6;
-  public static final int backRightTurnCanId = 8;
-
-  public static final int frontLeftEncoderPort = 0;
-  public static final int backLeftEncoderPort = 2;
-  public static final int frontRightEncoderPort = 1;
-  public static final int backRightEncoderPort = 3;
-
   public static class DriveMotor {
-    private static boolean tunable = false;
     // Drive motor configuration
-    public static final int stallLimit_A = 60;
+    /** FL, FR, BL, BR */
+    public static final int[] canIds = new int[] {3, 5, 1, 7};
+
     public static final double reduction = 6.25666667;
-    // (45.0 * 22.0) / (14.0 * 15.0); // MAXSwerve with 14 pinion teeth and 22 spur teeth
     public static final DCMotor gearbox = DCMotor.getNEO(1);
 
-    // Drive encoder configuration
-    public static final double encoderPositionFactor =
-        2 * Math.PI / reduction; // Rotor Rotations -> Wheel Radians
-    public static final double encoderVelocityFactor =
-        ((2 * Math.PI) / 60.0) / reduction; // Rotor RPM -> Wheel Rad/Sec
+    public static final NovaConfig config = new NovaConfig();
+
+    static {
+      config.setBrakeMode(BrakeMode.BRAKE).setVoltageCompensation(nominalVoltage_V);
+      config.limits.setMaxStatorCurrent(60).setMaxSupplyCurrent(60);
+      config
+          .canFreq
+          .setSensorPeriod(1 / odometryFrequency_Hz)
+          .setControlPeriod(0.02)
+          .setCurrentPeriod(0.02)
+          .setFaultPeriod(0.02);
+    }
 
     // Drive PID configuration
     public static final SimpleMotorFeedforward realFF =
@@ -93,150 +78,126 @@ public class DriveConstants {
     public static final SimpleMotorFeedforward simFF =
         new SimpleMotorFeedforward(0.0, 0.16, 0.008, robotPeriod_s);
     public static final PIDController simPID = new PIDController(0.2, 0.0, 0.0, robotPeriod_s);
-    public static LoggedNetworkNumber realS = null;
-    public static LoggedNetworkNumber realV = null;
-    public static LoggedNetworkNumber realA = null;
-    public static LoggedNetworkNumber realP = null;
-    public static LoggedNetworkNumber realI = null;
-    public static LoggedNetworkNumber realD = null;
-    public static LoggedNetworkNumber simS = null;
-    public static LoggedNetworkNumber simV = null;
-    public static LoggedNetworkNumber simA = null;
-    public static LoggedNetworkNumber simP = null;
-    public static LoggedNetworkNumber simI = null;
-    public static LoggedNetworkNumber simD = null;
+
+    public static TunableDouble realS =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realS", realFF.getKs(), realFF::setKs);
+    public static TunableDouble realV =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realV", realFF.getKv(), realFF::setKv);
+    public static TunableDouble realA =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realA", realFF.getKa(), realFF::setKa);
+    public static TunableDouble realP =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realP", realPID.getP(), realPID::setP);
+    public static TunableDouble realI =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realI", realPID.getI(), realPID::setI);
+    public static TunableDouble realD =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/realD", realPID.getD(), realPID::setD);
+
+    public static TunableDouble simS =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simS", simFF.getKs(), simFF::setKs);
+    public static TunableDouble simV =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simV", simFF.getKv(), simFF::setKv);
+    public static TunableDouble simA =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simA", simFF.getKa(), simFF::setKa);
+    public static TunableDouble simP =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simP", simPID.getP(), simPID::setP);
+    public static TunableDouble simI =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simI", simPID.getI(), simPID::setI);
+    public static TunableDouble simD =
+        new TunableDouble("Tunable/" + name + "/DriveMotor/simD", simPID.getD(), simPID::setD);
 
     public static void updateTunable() {
-      if (DriveConstants.tunable.get()) {
-        if (!tunable) {
-          tunable = true;
-          realP = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realP", realPID.getP());
-          realI = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realI", realPID.getI());
-          realD = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realD", realPID.getD());
-          realS = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realS", realFF.getKs());
-          realV = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realV", realFF.getKv());
-          realA = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/realA", realFF.getKa());
-          simP = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simP", simPID.getP());
-          simI = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simI", simPID.getI());
-          simD = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simD", simPID.getD());
-          simS = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simS", simFF.getKs());
-          simV = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simV", simFF.getKv());
-          simA = new LoggedNetworkNumber("Tunable/" + name + "/DriveMotor/simA", simFF.getKa());
-        } else {
-          realPID.setP(realP.get());
-          realPID.setI(realI.get());
-          realPID.setD(realD.get());
-          realFF.setKs(realS.get());
-          realFF.setKv(realV.get());
-          realFF.setKa(realA.get());
-          simPID.setP(simP.get());
-          simPID.setI(simI.get());
-          simPID.setD(simD.get());
-          simFF.setKs(simS.get());
-          simFF.setKv(simV.get());
-          simFF.setKa(simA.get());
-        }
-      } else {
-        if (tunable) {
-          tunable = false;
-          realP = null;
-          realI = null;
-          realD = null;
-          realS = null;
-          realV = null;
-          realA = null;
-          simP = null;
-          simI = null;
-          simD = null;
-          simS = null;
-          simV = null;
-          simA = null;
-        }
-      }
+      realS.update(tunable.get());
+      realV.update(tunable.get());
+      realA.update(tunable.get());
+      realP.update(tunable.get());
+      realI.update(tunable.get());
+      realD.update(tunable.get());
+      simS.update(tunable.get());
+      simV.update(tunable.get());
+      simA.update(tunable.get());
+      simP.update(tunable.get());
+      simI.update(tunable.get());
+      simD.update(tunable.get());
     }
   }
 
   public static class TurnMotor {
     // Turn motor configuration
-    private static boolean tunable = false;
-    public static final boolean inverted = false;
-    public static final int currentLimit_A = 20;
+    /** FL, FR, BL, BR */
+    public static final int[] canIds = new int[] {4, 6, 2, 8};
+
     public static final double reduction = 25;
     public static final DCMotor gearbox = DCMotor.getNEO(1);
 
-    // Turn encoder configuration
-    public static final boolean turnEncoderInverted = true;
-    public static final double turnAbsEncoderPositionFactor = 2 * Math.PI; // Rotations -> Radians
-    public static final double turnAbsEncoderVelocityFactor =
-        (2 * Math.PI) / 60.0; // RPM -> Rad/Sec
-    public static final double turnEncoderPositionFactor = 2 * Math.PI / 25; // Rotations -> Radians
-    public static final double turnEncoderVelocityFactor =
-        (2 * Math.PI / 25) / 60.0; // RPM -> Rad/Sec
+    public static final NovaConfig config = new NovaConfig();
+
+    static {
+      config.setBrakeMode(BrakeMode.BRAKE).setVoltageCompensation(nominalVoltage_V);
+      config.limits.setMaxStatorCurrent(50).setMaxSupplyCurrent(20);
+      config
+          .canFreq
+          .setSensorPeriod(1 / odometryFrequency_Hz)
+          .setControlPeriod(0.02)
+          .setCurrentPeriod(0.02)
+          .setFaultPeriod(0.02);
+    }
 
     // Turn PID configuration
-    public static final double turnPIDMinInput = 0; // Radians
-    public static final double turnPIDMaxInput = 2 * Math.PI; // Radians
     public static final PIDController realPID = new PIDController(2.0, 0.0, 0.0, robotPeriod_s);
     public static final PIDController simPID = new PIDController(16.0, 0.0, 0.3, robotPeriod_s);
 
     static {
-      realPID.enableContinuousInput(turnPIDMinInput, turnPIDMaxInput);
-      simPID.enableContinuousInput(turnPIDMinInput, turnPIDMaxInput);
+      realPID.enableContinuousInput(0, 2 * Math.PI);
+      simPID.enableContinuousInput(0, 2 * Math.PI);
     }
 
-    public static LoggedNetworkNumber realP = null;
-    public static LoggedNetworkNumber realI = null;
-    public static LoggedNetworkNumber realD = null;
-    public static LoggedNetworkNumber simP = null;
-    public static LoggedNetworkNumber simI = null;
-    public static LoggedNetworkNumber simD = null;
+    public static TunableDouble realP =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/realP", realPID.getP(), realPID::setP);
+    public static TunableDouble realI =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/realI", realPID.getI(), realPID::setI);
+    public static TunableDouble realD =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/realD", realPID.getD(), realPID::setD);
+
+    public static TunableDouble simP =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/simP", simPID.getP(), simPID::setP);
+    public static TunableDouble simI =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/simI", simPID.getI(), simPID::setI);
+    public static TunableDouble simD =
+        new TunableDouble("Tunable/" + name + "/TurnMotor/simD", simPID.getD(), simPID::setD);
 
     public static void updateTunable() {
-      if (DriveConstants.tunable.get()) {
-        if (!tunable) {
-          tunable = true;
-          realP = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/realP", realPID.getP());
-          realI = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/realI", realPID.getI());
-          realD = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/realD", realPID.getD());
-          simP = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/simP", simPID.getP());
-          simI = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/simI", simPID.getI());
-          simD = new LoggedNetworkNumber("Tunable/" + name + "/TurnMotor/simD", simPID.getD());
-        } else {
-          realPID.setP(realP.get());
-          realPID.setI(realI.get());
-          realPID.setD(realD.get());
-          simPID.setP(simP.get());
-          simPID.setI(simI.get());
-          simPID.setD(simD.get());
-        }
-      } else {
-        if (tunable) {
-          tunable = false;
-          realP = null;
-          realI = null;
-          realD = null;
-          simP = null;
-          simI = null;
-          simD = null;
-        }
-      }
+      realP.update(tunable.get());
+      realI.update(tunable.get());
+      realD.update(tunable.get());
+      simP.update(tunable.get());
+      simI.update(tunable.get());
+      simD.update(tunable.get());
     }
   }
 
+  public static class AbsEncoder {
+    /** FL, FR, BL, BR */
+    public static final int[] analogPorts = new int[] {0, 1, 2, 3};
+
+    // Zeroed rotation values for each module
+    /** FL, FR, BL, BR */
+    public static final double[] zeroRotations_rad = new double[] {0.0, 0.0, 0.0, 0.0};
+  }
+
   // PathPlanner configuration
-  public static final double robotMassKg = 18.35;
-  public static final double robotMOI = 6.883;
+  public static final double robotMass_kg = 18.35;
+  public static final double robotMOI_kgm2 = 6.883;
   public static final double wheelCOF = 1.2;
   public static final RobotConfig ppConfig =
       new RobotConfig(
-          robotMassKg,
-          robotMOI,
+          robotMass_kg,
+          robotMOI_kgm2,
           new ModuleConfig(
               wheelRadius_m,
               maxSpeed_mPs,
               wheelCOF,
               DriveMotor.gearbox.withReduction(DriveMotor.reduction),
-              DriveMotor.stallLimit_A,
+              DriveMotor.config.limits.getMaxStatorCurrent(),
               1),
           moduleTranslations);
 
@@ -244,7 +205,7 @@ public class DriveConstants {
       DriveTrainSimulationConfig.Default()
           .withBumperSize(Inches.of(30.625), Inches.of(30.625))
           .withCustomModuleTranslations(moduleTranslations)
-          .withRobotMass(Kilogram.of(robotMassKg))
+          .withRobotMass(Kilogram.of(robotMass_kg))
           .withGyro(COTS.ofNav2X())
           .withSwerveModule(
               new SwerveModuleSimulationConfig(
