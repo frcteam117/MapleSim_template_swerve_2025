@@ -80,21 +80,20 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
   // Motion Profiling
   private final SwerveSetpointGenerator swerveSetpointGenerator =
       new SwerveSetpointGenerator(ppConfig, maxSpeed_mPs / driveBaseRadius_m);
-  private SwerveSetpoint lastSetpoint =
-      new SwerveSetpoint(
-          new ChassisSpeeds(),
-          new SwerveModuleState[] {
-            new SwerveModuleState(0, Rotation2d.kZero),
-            new SwerveModuleState(0, Rotation2d.kZero),
-            new SwerveModuleState(0, Rotation2d.kZero),
-            new SwerveModuleState(0, Rotation2d.kZero)
-          },
-          new DriveFeedforwards(
-              new double[] {0, 0, 0, 0},
-              new double[] {0, 0, 0, 0},
-              new double[] {0, 0, 0, 0},
-              new double[] {0, 0, 0, 0},
-              new double[] {0, 0, 0, 0}));
+  private SwerveSetpoint lastSetpoint = new SwerveSetpoint(
+      new ChassisSpeeds(),
+      new SwerveModuleState[] {
+        new SwerveModuleState(0, Rotation2d.kZero),
+        new SwerveModuleState(0, Rotation2d.kZero),
+        new SwerveModuleState(0, Rotation2d.kZero),
+        new SwerveModuleState(0, Rotation2d.kZero)
+      },
+      new DriveFeedforwards(
+          new double[] {0, 0, 0, 0},
+          new double[] {0, 0, 0, 0},
+          new double[] {0, 0, 0, 0},
+          new double[] {0, 0, 0, 0},
+          new double[] {0, 0, 0, 0}));
 
   public Drive(
       GyroIO gyroIO,
@@ -131,31 +130,23 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
         },
         this);
     Pathfinding.setPathfinder(new LocalADStarAK());
-    PathPlannerLogging.setLogActivePathCallback(
-        (activePath) -> {
-          Logger.recordOutput(
-              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
-        });
-    PathPlannerLogging.setLogTargetPoseCallback(
-        (targetPose) -> {
-          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
-        });
+    PathPlannerLogging.setLogActivePathCallback((activePath) -> {
+      Logger.recordOutput("Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+    });
+    PathPlannerLogging.setLogTargetPoseCallback((targetPose) -> {
+      Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+    });
 
     // Configure SysId
-    sysId =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+    sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null, null, null, (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+        new SysIdRoutine.Mechanism(
+            (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
   }
 
   @Override
   public void periodic() {
-    DriveConstants.updateTunable();
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -184,11 +175,10 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
       SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
-        moduleDeltas[moduleIndex] =
-            new SwerveModulePosition(
-                modulePositions[moduleIndex].distanceMeters
-                    - lastModulePositions[moduleIndex].distanceMeters,
-                modulePositions[moduleIndex].angle);
+        moduleDeltas[moduleIndex] = new SwerveModulePosition(
+            modulePositions[moduleIndex].distanceMeters
+                - lastModulePositions[moduleIndex].distanceMeters,
+            modulePositions[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
 
@@ -215,6 +205,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
    *
    * @param speeds_mps Speeds in meters/sec
    */
+  @Deprecated
   public void setNextVelocity(ChassisSpeeds speeds_mps) {
     // Calculate module setpoints
     speeds_mps = ChassisSpeeds.discretize(speeds_mps, 0.02);
@@ -226,9 +217,9 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
     Logger.recordOutput("SwerveChassisSpeeds/Setpoints", speeds_mps);
 
     // Send setpoints to modules
-    for (int i = 0; i < 4; i++) {
-      modules[i].runSetpoint(setpointStates[i]);
-    }
+    // for (int i = 0; i < 4; i++) {
+    //   modules[i].runSetpoint(setpointStates[i]);
+    // }
 
     // Log optimized setpoints (runSetpoint mutates each state)
     Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);

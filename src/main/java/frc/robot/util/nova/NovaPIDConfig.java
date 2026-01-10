@@ -78,9 +78,8 @@ public class NovaPIDConfig extends NovaBaseConfig {
   }
 
   public double getAccumulatorCap() {
-    return (double)
-        getParameter(
-            is0 ? NovaParameter.ACCUMULATOR_CAP_0.value : NovaParameter.ACCUMULATOR_CAP_1.value);
+    return (double) getParameter(
+        is0 ? NovaParameter.ACCUMULATOR_CAP_0.value : NovaParameter.ACCUMULATOR_CAP_1.value);
   }
 
   public NovaPIDConfig setAllowableError(double allowableError) {

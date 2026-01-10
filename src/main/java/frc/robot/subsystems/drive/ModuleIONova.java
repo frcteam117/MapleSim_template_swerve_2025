@@ -13,11 +13,12 @@
 
 package frc.robot.subsystems.drive;
 
-import static frc.robot.subsystems.drive.DriveConstants.*;
-
 import com.thethriftybot.ThriftyNova;
 import com.thethriftybot.ThriftyNova.MotorType;
 import edu.wpi.first.wpilibj.AnalogEncoder;
+import frc.robot.subsystems.drive.DriveConstants.AbsEncoder;
+import frc.robot.subsystems.drive.DriveConstants.DriveMotor;
+import frc.robot.subsystems.drive.DriveConstants.TurnMotor;
 import frc.robot.util.UnitUtil;
 import java.util.Queue;
 
@@ -33,6 +34,7 @@ public class ModuleIONova implements ModuleIO {
   private double lastNextDriveVelocity_radPs = 0.0;
 
   private double turnPosition_rad = 0.0;
+  private double currentTurnVelocity_radPs = 0.0;
 
   // Hardware objects
   private final ThriftyNova driveNova;
@@ -54,21 +56,15 @@ public class ModuleIONova implements ModuleIO {
     System.out.println(
         "Configuring drive motor. Module: " + module + "  CAN Id: " + DriveMotor.canIds[module]);
     DriveMotor.config.configure(driveNova);
-    System.out.println(
-        "Finished configuring drive motor. Module: "
-            + module
-            + "  CAN Id: "
-            + DriveMotor.canIds[module]);
+    System.out.println("Finished configuring drive motor. Module: " + module + "  CAN Id: "
+        + DriveMotor.canIds[module]);
 
     // Configure turn motor
     System.out.println(
         "Configuring Turn motor. Module: " + module + "  CAN Id: " + TurnMotor.canIds[module]);
     TurnMotor.config.configure(turnNova);
-    System.out.println(
-        "Finished configuring Turn motor. Module: "
-            + module
-            + "  CAN Id: "
-            + TurnMotor.canIds[module]);
+    System.out.println("Finished configuring Turn motor. Module: " + module + "  CAN Id: "
+        + TurnMotor.canIds[module]);
 
     // Create odometry queues
     timestampQueue = NovaOdometryThread.getInstance().makeTimestampQueue();
@@ -82,9 +78,9 @@ public class ModuleIONova implements ModuleIO {
     // Update drive inputs
     inputs.drivePosition_rad =
         UnitUtil.rotTorad(driveNova.getPositionInternal() / DriveMotor.reduction);
-    inputs.driveVelocity_radps =
+    inputs.driveVelocity_radPs =
         UnitUtil.RPMToradPs(driveNova.getVelocityInternal()) / DriveMotor.reduction;
-    currentDriveVelocity_radPs = inputs.driveVelocity_radps;
+    currentDriveVelocity_radPs = inputs.driveVelocity_radPs;
     inputs.driveVoltage_V = driveNova.getVoltage();
     inputs.driveStatorCurrent_A = driveNova.getStatorCurrent();
     inputs.driveSupplyCurrent_A = driveNova.getSupplyCurrent();
@@ -98,6 +94,7 @@ public class ModuleIONova implements ModuleIO {
         UnitUtil.rotTorad(turnNova.getPositionInternal() / TurnMotor.reduction) - zeroRotation_rad;
     inputs.turnVelocity_radPs =
         UnitUtil.RPMToradPs(turnNova.getVelocityInternal() / TurnMotor.reduction);
+    currentTurnVelocity_radPs = inputs.turnVelocity_radPs;
     inputs.turnVoltage_V = turnNova.getVoltage();
     inputs.turnStatorCurrent_A = turnNova.getStatorCurrent();
     inputs.turnSupplyCurrent_A = turnNova.getSupplyCurrent();
@@ -106,14 +103,12 @@ public class ModuleIONova implements ModuleIO {
     // Update odometry inputs
     inputs.odometryTimestamps =
         timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
-    inputs.odometryDrivePositions_rad =
-        drivePositionQueue.stream()
-            .mapToDouble((Double value) -> UnitUtil.rotTorad(value / DriveMotor.reduction))
-            .toArray();
-    inputs.odometryTurnPositions_rad =
-        turnPositionQueue.stream()
-            .mapToDouble((Double value) -> UnitUtil.rotTorad(value) - zeroRotation_rad)
-            .toArray();
+    inputs.odometryDrivePositions_rad = drivePositionQueue.stream()
+        .mapToDouble((Double value) -> UnitUtil.rotTorad(value / DriveMotor.reduction))
+        .toArray();
+    inputs.odometryTurnPositions_rad = turnPositionQueue.stream()
+        .mapToDouble((Double value) -> UnitUtil.rotTorad(value) - zeroRotation_rad)
+        .toArray();
     timestampQueue.clear();
     drivePositionQueue.clear();
     turnPositionQueue.clear();
@@ -131,24 +126,23 @@ public class ModuleIONova implements ModuleIO {
 
   @Override
   public void setNextDriveVelocity(double nextVelocity_radPs) {
-    driveNova.setVoltage(
-        DriveMotor.realFF.calculateWithVelocities(currentDriveVelocity_radPs, nextVelocity_radPs)
-            + DriveMotor.realPID.calculate(
-                currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
+    driveNova.setVoltage(DriveMotor.realFF.calculateWithVelocities(
+            currentDriveVelocity_radPs, nextVelocity_radPs)
+        + DriveMotor.realPID.calculate(currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
     lastNextDriveVelocity_radPs = nextVelocity_radPs;
   }
 
   @Override
   public void setNextDriveState(double nextVelocity_radPs, double nextAcceleration_radPs2) {
-    driveNova.setVoltage(
-        DriveMotor.realFF.calculate(nextVelocity_radPs, nextAcceleration_radPs2)
-            + DriveMotor.realPID.calculate(
-                currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
+    driveNova.setVoltage(DriveMotor.realFF.calculate(nextVelocity_radPs, nextAcceleration_radPs2)
+        + DriveMotor.realPID.calculate(currentDriveVelocity_radPs, lastNextDriveVelocity_radPs));
     lastNextDriveVelocity_radPs = nextVelocity_radPs;
   }
 
   @Override
-  public void setNextTurnPosition(double rotation_rad) {
-    turnNova.setVoltage(TurnMotor.realPID.calculate(turnPosition_rad, rotation_rad));
+  public void setNextTurnState(double nextPosition_rad, double nextVelocity_radPs) {
+    turnNova.setVoltage(
+        TurnMotor.realFF.calculateWithVelocities(currentTurnVelocity_radPs, nextVelocity_radPs)
+            + TurnMotor.realPID.calculate(turnPosition_rad, nextPosition_rad));
   }
 }

@@ -20,6 +20,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import frc.robot.Constants;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -30,17 +31,15 @@ public class Module {
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+  private double lastTurnAngle_rad = 0.0;
 
   public Module(ModuleIO io, int index) {
     this.io = io;
     this.index = index;
-    driveDisconnectedAlert =
-        new Alert(
-            "Disconnected drive motor on module " + Integer.toString(index) + ".",
-            AlertType.kError);
-    turnDisconnectedAlert =
-        new Alert(
-            "Disconnected turn motor on module " + Integer.toString(index) + ".", AlertType.kError);
+    driveDisconnectedAlert = new Alert(
+        "Disconnected drive motor on module " + Integer.toString(index) + ".", AlertType.kError);
+    turnDisconnectedAlert = new Alert(
+        "Disconnected turn motor on module " + Integer.toString(index) + ".", AlertType.kError);
   }
 
   public void periodic() {
@@ -62,34 +61,39 @@ public class Module {
     turnDisconnectedAlert.set(!inputs.turnConnected);
   }
 
+  // /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
+  // public void runSetpoint(SwerveModuleState state) {
+  //   // Optimize velocity setpoint
+  //   state.optimize(Rotation2d.fromRadians(getAngle()));
+  //   state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
+
+  //   // Apply setpoints
+  //   io.setNextDriveVelocity(state.speedMetersPerSecond / wheelRadius_m);
+  //   io.setNextTurnPosition(state.angle.getRadians());
+  // }
+
   /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
-  public void runSetpoint(SwerveModuleState state) {
+  public void setNextState(SwerveModuleState state, double acceleration_mPs2) {
     // Optimize velocity setpoint
-    state.optimize(Rotation2d.fromRadians(getAngle()));
-    state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
+    double acceleration_radPs2 =
+        Math.cos(state.angle.getRadians() - inputs.turnAbsolutePosition_rad)
+            * acceleration_mPs2
+            / wheelRadius_m;
+    state.optimize(Rotation2d.fromRadians(inputs.turnAbsolutePosition_rad));
+    state.cosineScale(Rotation2d.fromRadians(inputs.turnAbsolutePosition_rad));
 
     // Apply setpoints
-    io.setNextDriveVelocity(state.speedMetersPerSecond / wheelRadius_m);
-    io.setNextTurnPosition(state.angle.getRadians());
-  }
-
-  /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
-  public void setNextState(SwerveModuleState state, double acceleration_mps2) {
-    // Optimize velocity setpoint
-    state.optimize(Rotation2d.fromRadians(getAngle()));
-    state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
-
-    // Apply setpoints
-    io.setNextDriveState(
-        state.speedMetersPerSecond / wheelRadius_m,
-        Math.cos(state.angle.getRadians() - getAngle()) * acceleration_mps2 / wheelRadius_m);
-    io.setNextTurnPosition(state.angle.getRadians());
+    io.setNextDriveState(state.speedMetersPerSecond / wheelRadius_m, acceleration_radPs2);
+    io.setNextTurnState(
+        state.angle.getRadians(),
+        (state.angle.getRadians() - lastTurnAngle_rad) / Constants.robotPeriod_s);
+    lastTurnAngle_rad = state.angle.getRadians();
   }
 
   /** Runs the module with the specified voltage while controlling to zero degrees. */
   public void runCharacterization(double voltage_V) {
     io.setDriveVoltage(voltage_V);
-    io.setNextTurnPosition(0.0);
+    io.setNextTurnState(0.0, 0.0);
   }
 
   /** Disables all outputs to motors. */
@@ -100,7 +104,7 @@ public class Module {
 
   /** Returns the current turn angle of the module in radians. */
   public double getAngle() {
-    return inputs.turnPosition_rad;
+    return inputs.turnAbsolutePosition_rad;
   }
 
   /** Returns the current drive position of the module in meters. */
@@ -110,7 +114,7 @@ public class Module {
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return inputs.driveVelocity_radps * wheelRadius_m;
+    return inputs.driveVelocity_radPs * wheelRadius_m;
   }
 
   /** Returns the module position (turn angle and drive position). */
@@ -140,6 +144,10 @@ public class Module {
 
   /** Returns the module velocity in rad/sec. */
   public double getFFCharacterizationVelocity() {
-    return inputs.driveVelocity_radps;
+    return inputs.driveVelocity_radPs;
+  }
+
+  public ModuleIOInputsAutoLogged getInputs() {
+    return inputs;
   }
 }

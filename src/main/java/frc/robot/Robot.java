@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.logging.LogUtil;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.seasonspecific.reefscape2025.ReefscapeCoralOnFly;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -66,6 +67,7 @@ public class Robot extends LoggedRobot {
 
       case SIM:
         // Running a physics simulator, log to NT
+        Logger.addDataReceiver(new WPILOGWriter());
         Logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -101,6 +103,8 @@ public class Robot extends LoggedRobot {
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    LogUtil.getInstance().runUpdateMethods();
 
     // Return to normal thread priority
     Threads.setCurrentThreadPriority(false, 10);
@@ -153,11 +157,8 @@ public class Robot extends LoggedRobot {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
     SimulatedArena.getInstance()
-        .addGamePieceProjectile(
-            ReefscapeCoralOnFly.DropFromCoralStation(
-                ReefscapeCoralOnFly.CoralStationsSide.LEFT_STATION,
-                DriverStation.Alliance.Red,
-                true));
+        .addGamePieceProjectile(ReefscapeCoralOnFly.DropFromCoralStation(
+            ReefscapeCoralOnFly.CoralStationsSide.LEFT_STATION, DriverStation.Alliance.Red, true));
   }
 
   /** This function is called periodically during test mode. */

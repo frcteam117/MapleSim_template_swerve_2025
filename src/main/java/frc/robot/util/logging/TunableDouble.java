@@ -1,27 +1,33 @@
 package frc.robot.util.logging;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class TunableDouble implements DoubleSupplier {
   private final String key;
+  private final BooleanSupplier shouldPublish;
   private final DoubleConsumer onChange;
   private double value;
   private LoggedNetworkNumber networkNumber = null;
 
-  public TunableDouble(String key, double defaultValue, DoubleConsumer onChange) {
+  public TunableDouble(
+      String key, double defaultValue, BooleanSupplier shouldPublish, DoubleConsumer onChange) {
     this.key = key;
+    this.shouldPublish = shouldPublish;
     this.onChange = onChange;
     value = defaultValue;
+    LogUtil.getInstance().registerUpdateMethod(this::update);
   }
 
-  public TunableDouble(String key, double defaultValue) {
-    this(key, defaultValue, (value) -> {});
+  public TunableDouble(String key, double defaultValue, BooleanSupplier shouldPublish) {
+    this(key, defaultValue, shouldPublish, (value) -> {});
   }
 
-  public void update(boolean publish) {
-    if (publish) {
+  public void update() {
+    if (shouldPublish.getAsBoolean()) {
       if (networkNumber == null) {
         networkNumber = new LoggedNetworkNumber(key, value);
       }
@@ -32,6 +38,7 @@ public class TunableDouble implements DoubleSupplier {
     } else {
       if (networkNumber != null) {
         networkNumber = null;
+        NetworkTableInstance.getDefault().getDoubleTopic(key).getEntry(value).unpublish();
       }
     }
   }

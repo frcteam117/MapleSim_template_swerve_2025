@@ -24,7 +24,7 @@ public class VisionConstants {
       AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
   // Camera names, must match names configured on coprocessor
-  public static String camera0Name = "camera_0";
+  public static String camera0Name = "PC_Camera";
   public static String camera1Name = "camera_1";
 
   // Robot to camera transforms
@@ -45,11 +45,10 @@ public class VisionConstants {
 
   // Standard deviation multipliers for each camera
   // (Adjust to trust some cameras more than others)
-  public static double[] cameraStdDevFactors =
-      new double[] {
-        1.0, // Camera 0
-        1.0 // Camera 1
-      };
+  public static double[] cameraStdDevFactors = new double[] {
+    1.0, // Camera 0
+    1.0 // Camera 1
+  };
 
   // Multipliers to apply for MegaTag 2 observations
   public static double linearStdDevMegatag2Factor = 0.5; // More stable than full 3D solve

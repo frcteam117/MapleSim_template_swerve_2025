@@ -58,29 +58,24 @@ public class RobotContainer {
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
-        drive =
-            new Drive(
-                new GyroIONavX(),
-                new ModuleIONova(0),
-                new ModuleIONova(1),
-                new ModuleIONova(2),
-                new ModuleIONova(3),
-                (pose) -> {});
+        drive = new Drive(
+            new GyroIONavX(),
+            new ModuleIONova(0),
+            new ModuleIONova(1),
+            new ModuleIONova(2),
+            new ModuleIONova(3),
+            (pose) -> {});
 
-        this.vision =
-            new Vision(
-                drive,
-                new VisionIOPhotonVision(
-                    VisionConstants.camera0Name, VisionConstants.robotToCamera0),
-                new VisionIOPhotonVision(
-                    VisionConstants.camera1Name, VisionConstants.robotToCamera1));
+        this.vision = new Vision(
+            drive,
+            new VisionIOPhotonVision(VisionConstants.camera0Name, VisionConstants.robotToCamera0),
+            new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1));
 
         break;
       case SIM:
         // create a maple-sim swerve drive simulation instance
-        this.driveSimulation =
-            new SwerveDriveSimulation(
-                DriveConstants.mapleSimConfig, new Pose2d(3, 3, new Rotation2d()));
+        this.driveSimulation = new SwerveDriveSimulation(
+            DriveConstants.mapleSimConfig, new Pose2d(3, 3, new Rotation2d()));
         // add the simulated drivetrain to the simulation field
         SimulatedArena.getInstance().addDriveTrainSimulation(driveSimulation);
         // Body body = new Body();
@@ -92,34 +87,31 @@ public class RobotContainer {
         // simWorld.addCollisionListener(new CollisionListenerAdapter<>().collision(body.)));
 
         // Sim robot, instantiate physics sim IO implementations
-        drive =
-            new Drive(
-                new GyroIOSim(driveSimulation.getGyroSimulation()),
-                new ModuleIOSim(driveSimulation.getModules()[0]),
-                new ModuleIOSim(driveSimulation.getModules()[1]),
-                new ModuleIOSim(driveSimulation.getModules()[2]),
-                new ModuleIOSim(driveSimulation.getModules()[3]),
-                driveSimulation::setSimulationWorldPose);
+        drive = new Drive(
+            new GyroIOSim(driveSimulation.getGyroSimulation()),
+            new ModuleIOSim(driveSimulation.getModules()[0]),
+            new ModuleIOSim(driveSimulation.getModules()[1]),
+            new ModuleIOSim(driveSimulation.getModules()[2]),
+            new ModuleIOSim(driveSimulation.getModules()[3]),
+            driveSimulation::setSimulationWorldPose);
 
-        vision =
-            new Vision(
-                drive,
-                new VisionIOPhotonVisionSim(
-                    camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
-                new VisionIOPhotonVisionSim(
-                    camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose));
+        vision = new Vision(
+            drive,
+            new VisionIOPhotonVisionSim(
+                camera0Name, robotToCamera0, driveSimulation::getSimulatedDriveTrainPose),
+            new VisionIOPhotonVisionSim(
+                camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose));
 
         break;
       default:
         // Replayed robot, disable IO implementations
-        drive =
-            new Drive(
-                new GyroIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                (pose) -> {});
+        drive = new Drive(
+            new GyroIO() {},
+            new ModuleIO() {},
+            new ModuleIO() {},
+            new ModuleIO() {},
+            new ModuleIO() {},
+            (pose) -> {});
         vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
 
         break;
@@ -156,12 +148,11 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+    drive.setDefaultCommand(DriveCommands.joystickDrive(
+        drive,
+        () -> -controller.getLeftY(),
+        () -> -controller.getLeftX(),
+        () -> -controller.getRawAxis(2)));
 
     // Lock to 0° when A button is held
     // controller
@@ -174,63 +165,41 @@ public class RobotContainer {
     // controller.button(1).onTrue(Commands.runOnce(drive::stopWithX, drive));
 
     // Reset gyro / odometry
-    final Runnable resetGyro =
-        Constants.currentMode == Constants.Mode.SIM
-            ? () ->
-                drive.resetOdometry(
-                    driveSimulation
-                        .getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during
-            // simulation
-            : () ->
-                drive.resetOdometry(
-                    new Pose2d(drive.getPose().getTranslation(), new Rotation2d())); // zero gyro
+    final Runnable resetGyro = Constants.currentMode == Constants.Mode.SIM
+        ? () -> drive.resetOdometry(
+            driveSimulation
+                .getSimulatedDriveTrainPose()) // reset odometry to actual robot pose during
+        // simulation
+        : () -> drive.resetOdometry(
+            new Pose2d(drive.getPose().getTranslation(), new Rotation2d())); // zero gyro
     controller.start().onTrue(Commands.runOnce(resetGyro, drive).ignoringDisable(true));
 
-    controller
-        .button(1)
-        .onTrue(
-            Commands.runOnce(() -> {})
-                .finallyDo(
-                    () ->
-                        DriveCommands.pathToReef(drive::getPose, controller.button(1)::getAsBoolean)
-                            .schedule()));
+    controller.button(1).onTrue(Commands.runOnce(() -> {}).finallyDo(() -> DriveCommands.pathToReef(
+            drive::getPose, controller.button(1)::getAsBoolean)
+        .schedule()));
     // Example Coral Placement Code
     // TODO: delete these code for your own project
     if (Constants.currentMode == Constants.Mode.SIM) {
       // L4 placement
-      controller
-          .button(3)
-          .onTrue(
-              Commands.runOnce(
-                  () ->
-                      SimulatedArena.getInstance()
-                          .addGamePieceProjectile(
-                              new ReefscapeCoralOnFly(
-                                  driveSimulation.getSimulatedDriveTrainPose().getTranslation(),
-                                  new Translation2d(0.4, 0),
-                                  driveSimulation
-                                      .getDriveTrainSimulatedChassisSpeedsFieldRelative(),
-                                  driveSimulation.getSimulatedDriveTrainPose().getRotation(),
-                                  Meters.of(2),
-                                  MetersPerSecond.of(1.5),
-                                  Degrees.of(-80)))));
+      controller.button(3).onTrue(Commands.runOnce(() -> SimulatedArena.getInstance()
+          .addGamePieceProjectile(new ReefscapeCoralOnFly(
+              driveSimulation.getSimulatedDriveTrainPose().getTranslation(),
+              new Translation2d(0.4, 0),
+              driveSimulation.getDriveTrainSimulatedChassisSpeedsFieldRelative(),
+              driveSimulation.getSimulatedDriveTrainPose().getRotation(),
+              Meters.of(2),
+              MetersPerSecond.of(1.5),
+              Degrees.of(-80)))));
       // L3 placement
-      controller
-          .button(2)
-          .onTrue(
-              Commands.runOnce(
-                  () ->
-                      SimulatedArena.getInstance()
-                          .addGamePieceProjectile(
-                              new ReefscapeCoralOnFly(
-                                  driveSimulation.getSimulatedDriveTrainPose().getTranslation(),
-                                  new Translation2d(0.4, 0),
-                                  driveSimulation
-                                      .getDriveTrainSimulatedChassisSpeedsFieldRelative(),
-                                  driveSimulation.getSimulatedDriveTrainPose().getRotation(),
-                                  Meters.of(1.35),
-                                  MetersPerSecond.of(1.5),
-                                  Degrees.of(-60)))));
+      controller.button(2).onTrue(Commands.runOnce(() -> SimulatedArena.getInstance()
+          .addGamePieceProjectile(new ReefscapeCoralOnFly(
+              driveSimulation.getSimulatedDriveTrainPose().getTranslation(),
+              new Translation2d(0.4, 0),
+              driveSimulation.getDriveTrainSimulatedChassisSpeedsFieldRelative(),
+              driveSimulation.getSimulatedDriveTrainPose().getRotation(),
+              Meters.of(1.35),
+              MetersPerSecond.of(1.5),
+              Degrees.of(-60)))));
     }
   }
 
