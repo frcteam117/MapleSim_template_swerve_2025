@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.logging.LogUtil;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.seasonspecific.reefscape2025.ReefscapeCoralOnFly;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -66,6 +67,7 @@ public class Robot extends LoggedRobot {
 
       case SIM:
         // Running a physics simulator, log to NT
+        Logger.addDataReceiver(new WPILOGWriter());
         Logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -77,7 +79,6 @@ public class Robot extends LoggedRobot {
         Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim")));
         break;
     }
-
     // Initialize URCL
     Logger.registerURCL(URCL.startExternal());
 
@@ -94,6 +95,11 @@ public class Robot extends LoggedRobot {
   public void robotPeriodic() {
     // Switch thread to high priority to improve loop timing
     Threads.setCurrentThreadPriority(true, 99);
+
+    LogUtil.getInstance().runUpdateMethods();
+    // if (DriveConstants.mapleSimConfigChanged || currentMode == Constants.Mode.SIM) {
+    //   robotContainer.resetSimProperties(DriveConstants.mapleSimConfig);
+    // }
 
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled commands, running already-scheduled commands, removing

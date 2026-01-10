@@ -27,7 +27,7 @@ public class NovaUtil {
       } else {
         System.out.println(onFailure + nova.getID());
         try {
-          Thread.sleep(50);
+          Thread.sleep(20);
         } catch (InterruptedException e) {
           // TODO Auto-generated catch block
           e.printStackTrace();

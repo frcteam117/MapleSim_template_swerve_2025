@@ -13,13 +13,16 @@
 
 package frc.robot.subsystems.drive;
 
+import static frc.robot.Constants.robotPeriod_s;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import frc.robot.subsystems.drive.DriveConstants.TurnMotor;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -30,6 +33,8 @@ public class Module {
   private final Alert driveDisconnectedAlert;
   private final Alert turnDisconnectedAlert;
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+  private TrapezoidProfile turnProfile = new TrapezoidProfile(TurnMotor.profileConstraints);
+  private double lastTurnAngle_rad = 0.0;
 
   public Module(ModuleIO io, int index) {
     this.io = io;
@@ -51,7 +56,7 @@ public class Module {
     int sampleCount = inputs.odometryTimestamps.length; // All signals are sampled together
     odometryPositions = new SwerveModulePosition[sampleCount];
     for (int i = 0; i < sampleCount; i++) {
-      double positionMeters = inputs.odometryDrivePositions_rad[i] * wheelRadius_m;
+      double positionMeters = inputs.odometryDrivePositions_rad[i] * wheelRadius_m.getAsDouble();
       double angle_rad = inputs.odometryTurnPositions_rad[i];
       odometryPositions[i] =
           new SwerveModulePosition(positionMeters, Rotation2d.fromRadians(angle_rad));
@@ -69,27 +74,48 @@ public class Module {
     state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
 
     // Apply setpoints
-    io.setNextDriveVelocity(state.speedMetersPerSecond / wheelRadius_m);
-    io.setNextTurnPosition(state.angle.getRadians());
+    io.setNextDriveVelocity(state.speedMetersPerSecond / wheelRadius_m.getAsDouble());
+    TrapezoidProfile.State turnState =
+        turnProfile.calculate(
+            robotPeriod_s,
+            new TrapezoidProfile.State(inputs.turnPosition_rad, inputs.turnVelocity_radPs),
+            new TrapezoidProfile.State(state.angle.getRadians(), 0.0));
+    io.setNextTurnState(turnState.position, turnState.velocity);
   }
 
   /** Runs the module with the specified setpoint state. Mutates the state to optimize it. */
-  public void setNextState(SwerveModuleState state, double acceleration_mps2) {
+  public void setNextState(SwerveModuleState state, double acceleration_mPs2) {
     // Optimize velocity setpoint
-    state.optimize(Rotation2d.fromRadians(getAngle()));
+    double acceleration_radPs2 =
+        Math.cos(state.angle.getRadians() - inputs.turnPosition_rad)
+            * acceleration_mPs2
+            / wheelRadius_m.getAsDouble();
+    state.optimize(Rotation2d.fromRadians(inputs.turnPosition_rad));
     state.cosineScale(Rotation2d.fromRadians(inputs.turnPosition_rad));
 
     // Apply setpoints
     io.setNextDriveState(
-        state.speedMetersPerSecond / wheelRadius_m,
-        Math.cos(state.angle.getRadians() - getAngle()) * acceleration_mps2 / wheelRadius_m);
-    io.setNextTurnPosition(state.angle.getRadians());
+        state.speedMetersPerSecond / wheelRadius_m.getAsDouble(), acceleration_radPs2);
+
+    // TrapezoidProfile.State turnState =
+    // turnProfile.calculate(
+    //     robotPeriod_s,
+    //     new TrapezoidProfile.State(inputs.turnPosition_rad, inputs.turnVelocity_radPs),
+    //     new TrapezoidProfile.State(state.angle.getRadians(), 0.0));
+    io.setNextTurnState(
+        state.angle.getRadians(), (state.angle.getRadians() - lastTurnAngle_rad) / robotPeriod_s);
+    lastTurnAngle_rad = state.angle.getRadians();
+    // lastTurnVelocity_radPs = (state.angle.getRadians() - lastTurnAngle_rad) / robotPeriod_s
+    // io.setDriveVoltage(.0);
+    // io.setTurnVoltage(.1);
   }
 
   /** Runs the module with the specified voltage while controlling to zero degrees. */
   public void runCharacterization(double voltage_V) {
-    io.setDriveVoltage(voltage_V);
-    io.setNextTurnPosition(0.0);
+    // io.setDriveVoltage(voltage_V);
+    // io.setNextTurnPosition(0.0);
+    io.setDriveVoltage(0.0);
+    io.setTurnVoltage(voltage_V);
   }
 
   /** Disables all outputs to motors. */
@@ -100,17 +126,17 @@ public class Module {
 
   /** Returns the current turn angle of the module in radians. */
   public double getAngle() {
-    return inputs.turnPosition_rad;
+    return inputs.turnAbsolutePosition_rad;
   }
 
   /** Returns the current drive position of the module in meters. */
   public double getPositionMeters() {
-    return inputs.drivePosition_rad * wheelRadius_m;
+    return inputs.drivePosition_rad * wheelRadius_m.getAsDouble();
   }
 
   /** Returns the current drive velocity of the module in meters per second. */
   public double getVelocityMetersPerSec() {
-    return inputs.driveVelocity_radps * wheelRadius_m;
+    return inputs.driveVelocity_radPs * wheelRadius_m.getAsDouble();
   }
 
   /** Returns the module position (turn angle and drive position). */
@@ -140,6 +166,16 @@ public class Module {
 
   /** Returns the module velocity in rad/sec. */
   public double getFFCharacterizationVelocity() {
-    return inputs.driveVelocity_radps;
+    return inputs.driveVelocity_radPs;
+  }
+
+  public ModuleIOInputsAutoLogged getInputs() {
+    return inputs;
+  }
+
+  public void setNextTurnState(double turnPosition_rad, double turnVelocity_radPs) {
+    io.setNextTurnState(turnPosition_rad, turnVelocity_radPs);
+    Logger.recordOutput("TurnSetpoints/module_" + index + "/potition_rad", turnPosition_rad);
+    Logger.recordOutput("TurnSetpoints/module_" + index + "/velocity_radPs", turnVelocity_radPs);
   }
 }

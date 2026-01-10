@@ -14,16 +14,15 @@
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.robotPeriod_s;
 import static frc.robot.subsystems.drive.DriveConstants.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
-import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -38,19 +37,25 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.util.struct.Struct;
+import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.util.LocalADStarAK;
+import frc.robot.util.logging.RecordStruct;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -78,8 +83,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
   private final Consumer<Pose2d> resetSimulationPoseCallBack;
 
   // Motion Profiling
-  private final SwerveSetpointGenerator swerveSetpointGenerator =
-      new SwerveSetpointGenerator(ppConfig, maxSpeed_mPs / driveBaseRadius_m);
+  private double lastNextTurnVelocity_radPs = 0.0;
   private SwerveSetpoint lastSetpoint =
       new SwerveSetpoint(
           new ChassisSpeeds(),
@@ -121,9 +125,8 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
         this::getPose,
         this::resetOdometry,
         this::getChassisSpeeds,
-        this::setNextVelocity,
-        new PPHolonomicDriveController(
-            new PIDConstants(5.0, 0.0, 0.0), new PIDConstants(5.0, 0.0, 0.0)),
+        this::setGoalVelocity,
+        new PPHolonomicDriveController(linearPPpid, angularPPpid),
         ppConfig,
         // () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
         () -> {
@@ -155,7 +158,43 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   @Override
   public void periodic() {
-    DriveConstants.updateTunable();
+    Logger.recordOutput(
+        name + "/Command",
+        this.getCurrentCommand() == null ? null : this.getCurrentCommand().getName());
+    TurnMotor.sendableBuilder.update();
+    // if (ppConfigChanged) {
+    //   ppConfig =
+    //       new RobotConfig(
+    //           robotMass_kg.getAsDouble(),
+    //           robotMOI_kgm2.getAsDouble(),
+    //           new ModuleConfig(
+    //               wheelRadius_m.getAsDouble(),
+    //               maxSpeed_mPs.getAsDouble(),
+    //               1,
+    //               DriveMotor.gearbox.withReduction(DriveMotor.reduction),
+    //               DriveMotor.config.limits.getMaxStatorCurrent(),
+    //               1),
+    //           moduleTranslations);
+    // swerveSetpointGenerator =
+    //     new SwerveSetpointGenerator(ppConfig, maxSteerVelocity_radPs.getAsDouble());
+    //   ppConfigChanged = false;
+    // // }
+    // if (ppAutoBuilderConfigChanged) {
+    //   AutoBuilder.configure(
+    //       this::getPose,
+    //       this::resetOdometry,
+    //       this::getChassisSpeeds,
+    //       this::setGoalVelocity,
+    //       new PPHolonomicDriveController(linearPPpid, angularPPpid),
+    //       ppConfig,
+    //       // () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+    //       () -> {
+    //         return false;
+    //       },
+    //       this);
+    //   ppAutoBuilderConfigChanged = false;
+    // }
+
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     Logger.processInputs("Drive/Gyro", gyroInputs);
@@ -219,7 +258,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
     // Calculate module setpoints
     speeds_mps = ChassisSpeeds.discretize(speeds_mps, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds_mps);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeed_mPs);
+    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, maxSpeed_mPs.getAsDouble());
 
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
@@ -241,6 +280,7 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
    * @param speeds_mps Target speeds in meters/sec
    */
   public void setGoalVelocity(ChassisSpeeds speeds_mps) {
+    Logger.recordOutput("SwerveSetpointSpeeds", speeds_mps);
     lastSetpoint = swerveSetpointGenerator.generateSetpoint(lastSetpoint, speeds_mps, 0.02);
     // Log unoptimized setpoints
     Logger.recordOutput("SwerveStates/Setpoints", lastSetpoint.moduleStates());
@@ -255,6 +295,34 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
     // Log optimized setpoints (runSetpoint mutates each state)
     Logger.recordOutput("SwerveStates/SetpointsOptimized", lastSetpoint.moduleStates());
     Logger.recordOutput("SwerveSetpoint", lastSetpoint);
+  }
+
+  public Command runTurnVelocity(DoubleSupplier turnVelocity_radPs) {
+    return Commands.run(
+        () -> {
+          SwerveModuleState[] moduleStates =
+              new SwerveModuleState[] {
+                new SwerveModuleState(),
+                new SwerveModuleState(),
+                new SwerveModuleState(),
+                new SwerveModuleState()
+              };
+          for (int i = 0; i < 4; i++) {
+            moduleStates[i].angle =
+                Rotation2d.fromRadians(
+                    modules[i].getInputs().turnAbsolutePosition_rad
+                        + turnVelocity_radPs.getAsDouble() * robotPeriod_s);
+
+            modules[i].setNextTurnState(
+                moduleStates[i].angle.getRadians(),
+                turnVelocity_radPs.getAsDouble()
+                    + (turnVelocity_radPs.getAsDouble() - lastNextTurnVelocity_radPs)
+                        * robotPeriod_s);
+          }
+          lastNextTurnVelocity_radPs = turnVelocity_radPs.getAsDouble();
+          Logger.recordOutput("SwerveStates/SetpointsOptimized", moduleStates);
+        },
+        this);
   }
 
   /** Runs the drive in a straight line with the specified drive output. */
@@ -329,12 +397,52 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
   }
 
   /** Returns the average velocity of the modules in rad/sec. */
+  // @AutoLogOutput(key = "FFCharacterization/velocity_radPs")
   public double getFFCharacterizationVelocity() {
     double output = 0.0;
     for (int i = 0; i < 4; i++) {
       output += modules[i].getFFCharacterizationVelocity() / 4.0;
     }
+    SmartDashboard.putNumber("FFCharacterization/velocity_radPs", output);
     return output;
+  }
+
+  // @AutoLogOutput(key = "FFCharacterization/position_rad")
+  public double getFFCharacterizationPosition() {
+    double output = modules[0].getInputs().drivePosition_rad;
+    SmartDashboard.putNumber("FFCharacterization/position_rad", output);
+    // for (int i = 0; i < 4; i++) {
+    //   output += modules[i].getFFCharacterizationVelocity() / 4.0;
+    // }
+    return output;
+  }
+
+  // @AutoLogOutput(key = "FFCharacterization/voltage_V")
+  public double getFFCharacterizationVoltage() {
+    double output = 0.0;
+    for (int i = 0; i < 4; i++) {
+      output += modules[i].getInputs().driveVoltage_V / 4.0;
+    }
+    SmartDashboard.putNumber("FFCharacterization/voltage_V", output);
+    return output;
+  }
+
+  static record FFCharacterization(double position_rad, double velocity_radPs, double voltage_V)
+      implements StructSerializable {
+    @SuppressWarnings("unchecked")
+    public static final Struct<FFCharacterization> struct =
+        new RecordStruct(FFCharacterization.class, "SysIdFFCharacterization");
+  }
+
+  @AutoLogOutput(key = "FFCharacterization")
+  public FFCharacterization getFFCharacterization() {
+    double velocity_radPs = 0.0, voltage_V = 0.0;
+    for (int i = 0; i < 4; i++) {
+      velocity_radPs += modules[i].getInputs().turnVelocity_radPs / 4.0;
+      voltage_V += modules[i].getInputs().turnVoltage_V / 4.0;
+    }
+    return new FFCharacterization(
+        modules[0].getInputs().turnPosition_rad, velocity_radPs, voltage_V);
   }
 
   /** Returns the current odometry pose. */
@@ -366,11 +474,13 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   /** Returns the maximum linear speed in meters per sec. */
   public double getMaxLinearSpeedMetersPerSec() {
-    return maxSpeed_mPs;
+    // return 7;
+    return maxSpeed_mPs.getAsDouble();
   }
 
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
-    return maxSpeed_mPs / driveBaseRadius_m;
+    // return 7 / driveBaseRadius_m;
+    return maxSpeed_mPs.getAsDouble() / driveBaseRadius_m;
   }
 }

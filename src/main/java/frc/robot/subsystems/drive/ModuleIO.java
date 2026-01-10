@@ -20,7 +20,7 @@ public interface ModuleIO {
   public static class ModuleIOInputs {
     public boolean driveConnected = false;
     public double drivePosition_rad = 0.0;
-    public double driveVelocity_radps = 0.0;
+    public double driveVelocity_radPs = 0.0;
     public double driveVoltage_V = 0.0;
     public double driveStatorCurrent_A = 0.0;
     public double driveSupplyCurrent_A = 0.0;
@@ -55,6 +55,6 @@ public interface ModuleIO {
   public default void setNextDriveState(
       double nextVelocity_radPs, double nextAcceleration_radPs2) {}
 
-  /** Runs the turn motor at the next pidf voltage based on the given velocity. */
-  public default void setNextTurnPosition(double rotation_rad) {}
+  /** Runs the turn motor at the next pidf voltage based on the given position and velocity. */
+  public default void setNextTurnState(double position_rad, double velocity_radPs) {}
 }

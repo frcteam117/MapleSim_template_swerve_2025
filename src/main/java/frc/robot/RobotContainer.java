@@ -157,11 +157,12 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
+        // drive.runTurnVelocity(() -> -controller.getLeftX() * 4));
         DriveCommands.joystickDrive(
             drive,
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -controller.getRawAxis(2)));
 
     // Lock to 0° when A button is held
     // controller
@@ -261,4 +262,15 @@ public class RobotContainer {
     Logger.recordOutput(
         "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
   }
+
+  //   public void resetSimProperties(DriveTrainSimulationConfig mapleSimConfig) {
+  //     double angularVelocity = driveSimulation.getAngularVelocity();
+  //     Vector2 linearVelocity = driveSimulation.getLinearVelocity();
+  //     driveSimulation =
+  //         new SwerveDriveSimulation(mapleSimConfig,
+  // driveSimulation.getSimulatedDriveTrainPose());
+  //     driveSimulation.setAngularVelocity(angularVelocity);
+  //     driveSimulation.setLinearVelocity(linearVelocity);
+  //   }
+
 }
