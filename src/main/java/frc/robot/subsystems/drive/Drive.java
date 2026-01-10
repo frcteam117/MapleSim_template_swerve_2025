@@ -23,6 +23,7 @@ import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
+import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
@@ -84,6 +85,8 @@ public class Drive extends SubsystemBase implements Vision.VisionConsumer {
 
   // Motion Profiling
   private double lastNextTurnVelocity_radPs = 0.0;
+  private SwerveSetpointGenerator swerveSetpointGenerator =
+      new SwerveSetpointGenerator(ppConfig, maxSteerVelocity_radPs.getAsDouble());
   private SwerveSetpoint lastSetpoint =
       new SwerveSetpoint(
           new ChassisSpeeds(),

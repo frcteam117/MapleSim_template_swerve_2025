@@ -20,7 +20,6 @@ import static frc.robot.Constants.robotPeriod_s;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -221,9 +220,6 @@ public class DriveConstants {
             ppAutoBuilderConfigChanged = true;
             ppConfigChanged = true;
           });
-
-  public static final SwerveSetpointGenerator swerveSetpointGenerator =
-      new SwerveSetpointGenerator(ppConfig, maxSteerVelocity_radPs.getAsDouble());
 
   public static class AbsEncoder {
     /** FL, FR, BL, BR */

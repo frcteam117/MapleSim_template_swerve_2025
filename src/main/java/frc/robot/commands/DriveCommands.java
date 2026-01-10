@@ -108,7 +108,7 @@ public class DriveCommands {
                       isFlipped
                           ? drive.getRotation().plus(new Rotation2d(Math.PI))
                           : drive.getRotation());
-              drive.setNextVelocity(speeds);
+              drive.setGoalVelocity(speeds);
             },
             drive)
         .withName("JoystickDrive");
