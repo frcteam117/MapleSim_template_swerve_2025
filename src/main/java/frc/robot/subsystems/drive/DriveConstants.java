@@ -59,7 +59,7 @@ public class DriveConstants {
 
     // Drive PID configuration
     public static final SimpleMotorFeedforward
-        realFF = new SimpleMotorFeedforward(0.0, 0.1, 0.0, robotPeriod_s),
+        realFF = new SimpleMotorFeedforward(0.013, 0.01, 0.0, robotPeriod_s),
         simFF = new SimpleMotorFeedforward(0.036968, 0.15869, 0.034, robotPeriod_s);
     public static final PIDController realPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s),
         simPID = new PIDController(0.23931, 0.0, 0.0, robotPeriod_s);
@@ -92,10 +92,10 @@ public class DriveConstants {
 
     /** PID controllers for the turn (azimuth) motor in each swerve module. */
     public static final SimpleMotorFeedforward
-        realFF = new SimpleMotorFeedforward(0.0, 0.1, 0.0, robotPeriod_s),
+        realFF = new SimpleMotorFeedforward(0.01, 0.051, 0.0, robotPeriod_s),
         simFF = new SimpleMotorFeedforward(0.004, 0.4960674, 0.006, robotPeriod_s);
 
-    public static final PIDController realPID = new PIDController(2.0, 0.0, 0.0, robotPeriod_s),
+    public static final PIDController realPID = new PIDController(0.5, 0.0, 0.0, robotPeriod_s),
         simPID = new PIDController(4, 0.0, 0.05, robotPeriod_s);
 
     static {
@@ -126,7 +126,8 @@ public class DriveConstants {
 
     // Zeroed rotation values for each module
     /** FL, FR, BL, BR */
-    public static final double[] zeroRotations_rad = new double[] {0.0, 0.0, 0.0, 0.0};
+    public static final double[] zeroRotations_rad =
+        new double[] {4.26675, 2.99095, 2.40695, 3.355259};
   }
 
   // PathPlanner configuration
