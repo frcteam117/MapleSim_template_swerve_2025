@@ -110,7 +110,7 @@ public class ShooterIOReal implements ShooterIO {
 
   @Override
   public void setTurretNextState(double next_rad, double next_radPs) {
-    turret.setVoltage(Turret.realFF.calculateWithVelocities(turret_rad, turret_radPs, next_radPs)
+    turret.setVoltage(Turret.realFF.calculateWithVelocities(turret_radPs, next_radPs)
         + Hood.realPID.calculate(turret_rad, turretLastNext_radPs));
     turretLastNext_radPs = next_radPs;
   }

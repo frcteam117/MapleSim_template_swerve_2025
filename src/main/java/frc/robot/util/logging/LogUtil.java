@@ -1,5 +1,6 @@
 package frc.robot.util.logging;
 
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import java.util.ArrayList;
@@ -50,6 +51,14 @@ public class LogUtil {
       String key, SimpleMotorFeedforward ff, BooleanSupplier shouldPublish) {
     @SuppressWarnings("unused")
     TunableDouble S = new TunableDouble(key + "S", ff.getKs(), shouldPublish, ff::setKs),
+        V = new TunableDouble(key + "V", ff.getKv(), shouldPublish, ff::setKv),
+        A = new TunableDouble(key + "A", ff.getKa(), shouldPublish, ff::setKa);
+  }
+
+  public static void createTunableFF(String key, ArmFeedforward ff, BooleanSupplier shouldPublish) {
+    @SuppressWarnings("unused")
+    TunableDouble S = new TunableDouble(key + "S", ff.getKs(), shouldPublish, ff::setKs),
+        G = new TunableDouble(key + "G", ff.getKg(), shouldPublish, ff::setKg),
         V = new TunableDouble(key + "V", ff.getKv(), shouldPublish, ff::setKv),
         A = new TunableDouble(key + "A", ff.getKa(), shouldPublish, ff::setKa);
   }

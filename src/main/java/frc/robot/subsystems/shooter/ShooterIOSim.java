@@ -123,9 +123,8 @@ public class ShooterIOSim implements ShooterIO {
 
   @Override
   public void setTurretNextState(double next_rad, double next_radPs) {
-    turret.setInputVoltage(
-        Turret.simFF.calculateWithVelocities(turret_rad, turret_radPs, next_radPs)
-            + Hood.simPID.calculate(turret_rad, turretLastNext_radPs));
+    turret.setInputVoltage(Turret.simFF.calculateWithVelocities(turret_radPs, next_radPs)
+        + Hood.simPID.calculate(turret_rad, turretLastNext_radPs));
     turretLastNext_radPs = next_radPs;
   }
 }

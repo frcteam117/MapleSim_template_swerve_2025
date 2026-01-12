@@ -9,9 +9,13 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import frc.robot.util.UnitUtil;
+import frc.robot.util.logging.LogUtil;
+import frc.robot.util.logging.TunableBoolean;
 
 public class ShooterConstants {
   public static final String name = "Shooter";
+  public static final TunableBoolean tunable =
+      new TunableBoolean("Tunable/" + name + "/.Tunable", false, () -> true);
 
   public static class Flywheel {
     public static final String name = ShooterConstants.name + "/Flywheel";
@@ -41,6 +45,10 @@ public class ShooterConstants {
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)
           .velocityConversionFactor(UnitUtil.RPMToradPs(1) / reduction);
+      LogUtil.createTunablePID("Tunable/" + name + "/real", realPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/real", realFF, tunable::getAsBoolean);
+      LogUtil.createTunablePID("Tunable/" + name + "/sim", simPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/sim", simFF, tunable::getAsBoolean);
     }
   }
 
@@ -79,6 +87,10 @@ public class ShooterConstants {
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)
           .velocityConversionFactor(UnitUtil.RPMToradPs(1) / reduction);
+      LogUtil.createTunablePID("Tunable/" + name + "/real", realPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/real", realFF, tunable::getAsBoolean);
+      LogUtil.createTunablePID("Tunable/" + name + "/sim", simPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/sim", simFF, tunable::getAsBoolean);
     }
   }
 
@@ -100,9 +112,9 @@ public class ShooterConstants {
     public static final int maxStator_A = 30;
     public static final SparkMaxConfig motorConfig = new SparkMaxConfig();
 
-    public static final ArmFeedforward
-        realFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0, robotPeriod_s),
-        simFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0, robotPeriod_s);
+    public static final SimpleMotorFeedforward
+        realFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, robotPeriod_s),
+        simFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, robotPeriod_s);
     public static final PIDController realPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s),
         simPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s);
 
@@ -113,6 +125,10 @@ public class ShooterConstants {
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)
           .velocityConversionFactor(UnitUtil.RPMToradPs(1) / reduction);
+      LogUtil.createTunablePID("Tunable/" + name + "/real", realPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/real", realFF, tunable::getAsBoolean);
+      LogUtil.createTunablePID("Tunable/" + name + "/sim", simPID, tunable::getAsBoolean);
+      LogUtil.createTunableFF("Tunable/" + name + "/sim", simFF, tunable::getAsBoolean);
     }
   }
 }

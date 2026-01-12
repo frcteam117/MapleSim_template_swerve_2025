@@ -28,7 +28,13 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.*;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterCommands;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOReal;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.*;
+import frc.robot.util.SysIdUtil.SysIdType;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.ironmaple.simulation.seasonspecific.reefscape2025.ReefscapeCoralOnFly;
@@ -45,6 +51,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Vision vision;
+  private final Shooter shooter;
   private SwerveDriveSimulation driveSimulation = null;
 
   // Controller
@@ -70,7 +77,7 @@ public class RobotContainer {
             drive,
             new VisionIOPhotonVision(VisionConstants.camera0Name, VisionConstants.robotToCamera0),
             new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1));
-
+        this.shooter = new Shooter(new ShooterIOReal());
         break;
       case SIM:
         // create a maple-sim swerve drive simulation instance
@@ -102,6 +109,8 @@ public class RobotContainer {
             new VisionIOPhotonVisionSim(
                 camera1Name, robotToCamera1, driveSimulation::getSimulatedDriveTrainPose));
 
+        shooter = new Shooter(new ShooterIOSim());
+
         break;
       default:
         // Replayed robot, disable IO implementations
@@ -113,6 +122,8 @@ public class RobotContainer {
             new ModuleIO() {},
             (pose) -> {});
         vision = new Vision(drive, new VisionIO() {}, new VisionIO() {});
+
+        shooter = new Shooter(new ShooterIO() {});
 
         break;
     }
@@ -135,6 +146,42 @@ public class RobotContainer {
         "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
     autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    autoChooser.addOption(
+        "Flywheel SysId (Quasistatic Forward)",
+        ShooterCommands.flywheelSysId(shooter, SysIdType.QuasistaticForward));
+    autoChooser.addOption(
+        "Flywheel SysId (Quasistatic Reverse)",
+        ShooterCommands.flywheelSysId(shooter, SysIdType.QuasistaticReverse));
+    autoChooser.addOption(
+        "Flywheel SysId (Dynamic Forward)",
+        ShooterCommands.flywheelSysId(shooter, SysIdType.DynamicForward));
+    autoChooser.addOption(
+        "Flywheel SysId (Dynamic Reverse)",
+        ShooterCommands.flywheelSysId(shooter, SysIdType.DynamicReverse));
+    autoChooser.addOption(
+        "Hood SysId (Quasistatic Forward)",
+        ShooterCommands.hoodSysId(shooter, SysIdType.QuasistaticForward));
+    autoChooser.addOption(
+        "Hood SysId (Quasistatic Reverse)",
+        ShooterCommands.hoodSysId(shooter, SysIdType.QuasistaticReverse));
+    autoChooser.addOption(
+        "Hood SysId (Dynamic Forward)",
+        ShooterCommands.hoodSysId(shooter, SysIdType.DynamicForward));
+    autoChooser.addOption(
+        "Hood SysId (Dynamic Reverse)",
+        ShooterCommands.hoodSysId(shooter, SysIdType.DynamicReverse));
+    autoChooser.addOption(
+        "Turret SysId (Quasistatic Forward)",
+        ShooterCommands.turretSysId(shooter, SysIdType.QuasistaticForward));
+    autoChooser.addOption(
+        "Turret SysId (Quasistatic Reverse)",
+        ShooterCommands.turretSysId(shooter, SysIdType.QuasistaticReverse));
+    autoChooser.addOption(
+        "Turret SysId (Dynamic Forward)",
+        ShooterCommands.turretSysId(shooter, SysIdType.DynamicForward));
+    autoChooser.addOption(
+        "Turret SysId (Dynamic Reverse)",
+        ShooterCommands.turretSysId(shooter, SysIdType.DynamicReverse));
 
     // Configure the button bindings
     configureButtonBindings();
