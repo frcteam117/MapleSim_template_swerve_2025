@@ -107,14 +107,14 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   @Override
-  public void setNextFlywheelState(double next_radPs) {
+  public void setFlywheelNextState(double next_radPs) {
     flywheel.setInputVoltage(Flywheel.simFF.calculateWithVelocities(flywheel_radPs, next_radPs)
         + Flywheel.simPID.calculate(flywheel_radPs, flywheelLastNext_radPs));
     flywheelLastNext_radPs = next_radPs;
   }
 
   @Override
-  public void setNextHoodState(double next_rad, double next_radPs) {
+  public void setHoodNextState(double next_rad, double next_radPs) {
     hood_V = Hood.simFF.calculateWithVelocities(hood_rad, hood_radPs, next_radPs)
         + Hood.simPID.calculate(hood_rad, hoodLastNext_radPs);
     hood.setInputVoltage(hood_V);
@@ -122,7 +122,7 @@ public class ShooterIOSim implements ShooterIO {
   }
 
   @Override
-  public void setNextTurretState(double next_rad, double next_radPs) {
+  public void setTurretNextState(double next_rad, double next_radPs) {
     turret.setInputVoltage(
         Turret.simFF.calculateWithVelocities(turret_rad, turret_radPs, next_radPs)
             + Hood.simPID.calculate(turret_rad, turretLastNext_radPs));

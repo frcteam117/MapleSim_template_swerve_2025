@@ -23,6 +23,7 @@ public class ShooterConstants {
 
     // software limits
     public static final double max_radPs2 = 10000;
+    public static final double max_radPs3 = 30000;
     public static final int maxStator_A = 30;
     public static final SparkMaxConfig motorConfig = new SparkMaxConfig();
 

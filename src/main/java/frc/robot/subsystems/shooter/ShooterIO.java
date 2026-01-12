@@ -22,9 +22,9 @@ public interface ShooterIO {
 
   public default void setTurretVoltage(double V) {}
 
-  public default void setNextFlywheelState(double next_radPs) {}
+  public default void setFlywheelNextState(double next_radPs) {}
 
-  public default void setNextHoodState(double next_rad, double next_radPs) {}
+  public default void setHoodNextState(double next_rad, double next_radPs) {}
 
-  public default void setNextTurretState(double next_rad, double next_radPs) {}
+  public default void setTurretNextState(double next_rad, double next_radPs) {}
 }

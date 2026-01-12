@@ -95,21 +95,21 @@ public class ShooterIOReal implements ShooterIO {
   }
 
   @Override
-  public void setNextFlywheelState(double next_radPs) {
+  public void setFlywheelNextState(double next_radPs) {
     flywheel.setVoltage(Flywheel.realFF.calculateWithVelocities(flywheel_radPs, next_radPs)
         + Flywheel.realPID.calculate(flywheel_radPs, flywheelLastNext_radPs));
     flywheelLastNext_radPs = next_radPs;
   }
 
   @Override
-  public void setNextHoodState(double next_rad, double next_radPs) {
+  public void setHoodNextState(double next_rad, double next_radPs) {
     hood.setVoltage(Hood.realFF.calculateWithVelocities(hood_rad, hood_radPs, next_radPs)
         + Hood.realPID.calculate(hood_rad, hoodLastNext_radPs));
     hoodLastNext_radPs = next_radPs;
   }
 
   @Override
-  public void setNextTurretState(double next_rad, double next_radPs) {
+  public void setTurretNextState(double next_rad, double next_radPs) {
     turret.setVoltage(Turret.realFF.calculateWithVelocities(turret_rad, turret_radPs, next_radPs)
         + Hood.realPID.calculate(turret_rad, turretLastNext_radPs));
     turretLastNext_radPs = next_radPs;
