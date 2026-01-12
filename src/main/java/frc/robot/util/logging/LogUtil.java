@@ -53,4 +53,11 @@ public class LogUtil {
         V = new TunableDouble(key + "V", ff.getKv(), shouldPublish, ff::setKv),
         A = new TunableDouble(key + "A", ff.getKa(), shouldPublish, ff::setKa);
   }
+
+  public record MotorState(
+      double position_rad,
+      double velocity_radPs,
+      double stator_V,
+      double stator_A,
+      double supply_A) {}
 }

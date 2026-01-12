@@ -1,12 +1,12 @@
 package frc.robot.subsystems.turret;
 
-import static frc.robot.subsystems.turret.TurretConstants.*;
+import static frc.robot.subsystems.turret.ShooterConstants.*;
 
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 
-public class TurretIOSim implements TurretIO {
+public class ShooterIOSim implements ShooterIO {
   // Simulator
   private FlywheelSim sim =
       new FlywheelSim(LinearSystemId.createFlywheelSystem(gearbox, .4, reduction), gearbox);
@@ -17,10 +17,10 @@ public class TurretIOSim implements TurretIO {
   private double lastNextVelocity_radPs = 0.0;
   private double currentVelocity_radPs;
 
-  public TurretIOSim() {}
+  public ShooterIOSim() {}
 
   @Override
-  public void updateInputs(TurretIOInputs ioInputs) {
+  public void updateInputs(ShooterIOInputs ioInputs) {
     ioInputs.mechanismPosition_rad = 0;
     ioInputs.mechanismVelocity_radPs = sim.getAngularVelocityRadPerSec();
     currentVelocity_radPs = ioInputs.mechanismVelocity_radPs;
@@ -39,9 +39,8 @@ public class TurretIOSim implements TurretIO {
 
   @Override
   public void setNextVelocity(double nextVelocity_radPs) {
-    sim.setInputVoltage(
-        realFF.calculateWithVelocities(currentVelocity_radPs, nextVelocity_radPs)
-            + realPID.calculate(currentVelocity_radPs, lastNextVelocity_radPs));
+    sim.setInputVoltage(realFF.calculateWithVelocities(currentVelocity_radPs, nextVelocity_radPs)
+        + realPID.calculate(currentVelocity_radPs, lastNextVelocity_radPs));
     lastNextVelocity_radPs = nextVelocity_radPs;
   }
 }

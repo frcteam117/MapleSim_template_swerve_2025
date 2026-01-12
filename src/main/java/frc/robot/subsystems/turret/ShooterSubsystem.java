@@ -1,24 +1,23 @@
 package frc.robot.subsystems.turret;
 
 import static frc.robot.Constants.robotPeriod_s;
-import static frc.robot.subsystems.turret.TurretConstants.*;
+import static frc.robot.subsystems.turret.ShooterConstants.*;
 
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.turret.TurretIO.TurretIOInputs;
+import frc.robot.subsystems.turret.ShooterIO.ShooterIOInputs;
 import java.util.function.DoubleSupplier;
-import org.littletonrobotics.junction.Logger;
 
-public class TurretSubsystem extends SubsystemBase {
+public class ShooterSubsystem extends SubsystemBase {
   /** Interface to control the funnel's hardware. */
-  private final TurretIO io;
+  private final ShooterIO io;
 
   /** The code's inputs from the funnel's hardware. */
-  private final TurretIOInputs ioInputs = new TurretIOInputs();
+  private final ShooterIOInputs ioInputs = new ShooterIOInputs();
 
   /** Constructor for the IntakeSubsystem. */
-  public TurretSubsystem(TurretIO io) {
+  public ShooterSubsystem(ShooterIO io) {
     this.io = io;
   }
 
@@ -33,29 +32,26 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   public Command runVoltageCommandFactory(DoubleSupplier voltageSupplier_V) {
-    return this.run(
-        () -> {
-          setVoltage(voltageSupplier_V.getAsDouble());
-        });
+    return this.run(() -> {
+      setVoltage(voltageSupplier_V.getAsDouble());
+    });
   }
 
   public void setGoalVelocity(double velocity_radPs) {
-    TrapezoidProfile.State nextState =
-        profile.calculate(
-            robotPeriod_s,
-            new TrapezoidProfile.State(ioInputs.mechanismVelocity_radPs, 0.0),
-            new TrapezoidProfile.State(velocity_radPs, 0.0));
+    TrapezoidProfile.State nextState = profile.calculate(
+        robotPeriod_s,
+        new TrapezoidProfile.State(ioInputs.mechanismVelocity_radPs, 0.0),
+        new TrapezoidProfile.State(velocity_radPs, 0.0));
     io.setNextVelocity(nextState.position);
   }
 
   public Command runGoalVelocityCommandFactory(DoubleSupplier velocitySupplier_radPs) {
-    return this.run(
-        () -> {
-          setGoalVelocity(velocitySupplier_radPs.getAsDouble());
-        });
+    return this.run(() -> {
+      setGoalVelocity(velocitySupplier_radPs.getAsDouble());
+    });
   }
 
-  public TurretIOInputs getInputs() {
+  public ShooterIOInputs getInputs() {
     return ioInputs;
   }
 }
