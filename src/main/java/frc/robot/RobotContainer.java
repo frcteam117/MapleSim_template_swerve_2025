@@ -159,17 +159,9 @@ public class RobotContainer {
         "Flywheel SysId (Dynamic Reverse)",
         ShooterCommands.flywheelSysId(shooter, SysIdType.DynamicReverse));
     autoChooser.addOption(
-        "Hood SysId (Quasistatic Forward)",
-        ShooterCommands.hoodSysId(shooter, SysIdType.QuasistaticForward));
+        "Hood SysId (Quasistatic)", ShooterCommands.hoodSysId(shooter, SysIdType.Quasistatic));
     autoChooser.addOption(
-        "Hood SysId (Quasistatic Reverse)",
-        ShooterCommands.hoodSysId(shooter, SysIdType.QuasistaticReverse));
-    autoChooser.addOption(
-        "Hood SysId (Dynamic Forward)",
-        ShooterCommands.hoodSysId(shooter, SysIdType.DynamicForward));
-    autoChooser.addOption(
-        "Hood SysId (Dynamic Reverse)",
-        ShooterCommands.hoodSysId(shooter, SysIdType.DynamicReverse));
+        "Hood SysId (Dynamic)", ShooterCommands.hoodSysId(shooter, SysIdType.Dynamic));
     autoChooser.addOption(
         "Turret SysId (Quasistatic Forward)",
         ShooterCommands.turretSysId(shooter, SysIdType.QuasistaticForward));
@@ -200,6 +192,10 @@ public class RobotContainer {
         () -> -controller.getLeftY(),
         () -> -controller.getLeftX(),
         () -> -controller.getRawAxis(2)));
+    shooter.setDefaultCommand(ShooterCommands.trackPosition(
+        shooter, drive::getPose, () -> new Translation2d(4.489, 4.026)));
+    // shooter.setDefaultCommand(ShooterCommands.runFlywheelGoalVelocity(
+    //     shooter, () -> -500 + 1000 * (-controller.getRawAxis(3) + 1) / 2));
 
     // Lock to 0° when A button is held
     // controller

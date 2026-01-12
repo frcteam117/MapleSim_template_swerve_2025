@@ -37,10 +37,10 @@ public class ShooterIOSim implements ShooterIO {
   private double hood_V = 0;
   private double hood_rad = Hood.start_rad;
   private double hood_radPs = 0;
-  private double hoodLastNext_radPs = 0;
+  private double hoodLastNext_rad = 0;
   private double turret_rad = Turret.start_rad;
   private double turret_radPs = 0;
-  private double turretLastNext_radPs = 0;
+  private double turretLastNext_rad = 0;
 
   public ShooterIOSim() {
     reset(Hood.start_rad, Turret.start_rad);
@@ -97,13 +97,13 @@ public class ShooterIOSim implements ShooterIO {
   public void setHoodVoltage(double V) {
     hood_V = V;
     hood.setInputVoltage(hood_V);
-    hoodLastNext_radPs = hood_radPs;
+    hoodLastNext_rad = hood_radPs;
   }
 
   @Override
   public void setTurretVoltage(double V) {
     turret.setInputVoltage(V);
-    turretLastNext_radPs = turret_radPs;
+    turretLastNext_rad = turret_radPs;
   }
 
   @Override
@@ -115,16 +115,16 @@ public class ShooterIOSim implements ShooterIO {
 
   @Override
   public void setHoodNextState(double next_rad, double next_radPs) {
-    hood_V = Hood.simFF.calculateWithVelocities(hood_rad, hood_radPs, next_radPs)
-        + Hood.simPID.calculate(hood_rad, hoodLastNext_radPs);
+    hood_V = Hood.simFF.calculateWithVelocities(hood_rad + Hood.cmAngle_rad, hood_radPs, next_radPs)
+        + Hood.simPID.calculate(hood_rad, hoodLastNext_rad);
     hood.setInputVoltage(hood_V);
-    hoodLastNext_radPs = next_radPs;
+    hoodLastNext_rad = next_rad;
   }
 
   @Override
   public void setTurretNextState(double next_rad, double next_radPs) {
     turret.setInputVoltage(Turret.simFF.calculateWithVelocities(turret_radPs, next_radPs)
-        + Hood.simPID.calculate(turret_rad, turretLastNext_radPs));
-    turretLastNext_radPs = next_radPs;
+        + Hood.simPID.calculate(turret_rad, turretLastNext_rad));
+    turretLastNext_rad = next_rad;
   }
 }

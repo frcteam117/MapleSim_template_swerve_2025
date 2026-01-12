@@ -76,4 +76,8 @@ public class LogUtil {
       double stator_V,
       double stator_A,
       double supply_A) {}
+
+  public record AngularSetpoint(double V, double rad, double radPs) {}
+
+  public record LinearSetpoint(double V, double m, double mPs) {}
 }
