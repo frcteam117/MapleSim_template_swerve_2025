@@ -1,12 +1,12 @@
-package frc.robot.subsystems.turret;
+package frc.robot.subsystems.shooter;
 
 import static frc.robot.Constants.robotPeriod_s;
-import static frc.robot.subsystems.turret.ShooterConstants.*;
+import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.turret.ShooterIO.ShooterIOInputs;
+import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
 import java.util.function.DoubleSupplier;
 
 public class ShooterSubsystem extends SubsystemBase {

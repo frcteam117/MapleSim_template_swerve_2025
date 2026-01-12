@@ -1,6 +1,6 @@
-package frc.robot.subsystems.turret;
+package frc.robot.subsystems.shooter;
 
-import static frc.robot.subsystems.turret.ShooterConstants.*;
+import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -10,21 +10,30 @@ import com.revrobotics.spark.SparkMax;
 
 public class ShooterIOReal implements ShooterIO {
   // Sparkmax objects
-  private SparkMax spark = new SparkMax(canId, MotorType.kBrushless);
-  private RelativeEncoder encoder = spark.getEncoder();
+  private final SparkMax flywheel = new SparkMax(Flywheel.canId, MotorType.kBrushless);
+  private final RelativeEncoder flywheelEncoder = flywheel.getEncoder();
+  private final SparkMax hood = new SparkMax(Hood.canId, MotorType.kBrushless);
+  private final RelativeEncoder hoodEncoder = hood.getEncoder();
+  private final SparkMax turret = new SparkMax(Turret.canId, MotorType.kBrushless);
+  private final RelativeEncoder turretEncoder = turret.getEncoder();
 
   // Motion profiling
   private double lastNextVelocity_radPs = 0.0;
   private double currentVelocity_radPs;
 
   public ShooterIOReal() {
-    spark.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    flywheel.configure(
+        Flywheel.motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    hood.configure(
+        Hood.motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    turret.configure(
+        Turret.motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override
   public void updateInputs(ShooterIOInputs ioInputs) {
-    ioInputs.mechanismPosition_rad = encoder.getPosition();
-    ioInputs.mechanismVelocity_radPs = encoder.getVelocity();
+    ioInputs.mechanismPosition_rad = flywheelEncoder.getPosition();
+    ioInputs.mechanismVelocity_radPs = flywheelEncoder.getVelocity();
     currentVelocity_radPs = ioInputs.mechanismVelocity_radPs;
 
     ioInputs.motorVoltage_V = spark.getBusVoltage() * spark.getAppliedOutput();

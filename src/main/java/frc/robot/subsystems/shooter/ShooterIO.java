@@ -1,14 +1,14 @@
-package frc.robot.subsystems.turret;
+package frc.robot.subsystems.shooter;
 
-import frc.robot.util.logging.LogUtil.MotorState;
+import frc.robot.util.logging.LogUtil.AngularMechanismState;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ShooterIO {
   @AutoLog
   public static class ShooterIOInputs {
-    public MotorState flywheel;
-    public MotorState hood;
-    public MotorState turret;
+    public AngularMechanismState flywheel;
+    public AngularMechanismState hood;
+    public AngularMechanismState turret;
   }
 
   /** Updates the set of loggable inputs. */
