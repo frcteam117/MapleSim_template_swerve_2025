@@ -14,15 +14,17 @@ public interface ShooterIO {
   /** Updates the set of loggable inputs. */
   public default void updateInputs(ShooterIOInputs inputs) {}
 
+  public default void reset(double hood_rad, double turret_rad) {}
+
   public default void setFlywheelVoltage(double V) {}
 
   public default void setHoodVoltage(double V) {}
 
   public default void setTurretVoltage(double V) {}
 
-  public default void setNextFlywheelState(double nextV_radPs) {}
+  public default void setNextFlywheelState(double next_radPs) {}
 
-  public default void setNextHoodState(double nextP_rad, double nextV_radPs) {}
+  public default void setNextHoodState(double next_rad, double next_radPs) {}
 
-  public default void setNextTurretState(double nextP_rad, double nextV_radPs) {}
+  public default void setNextTurretState(double next_rad, double next_radPs) {}
 }

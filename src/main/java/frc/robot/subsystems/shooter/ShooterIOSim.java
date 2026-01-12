@@ -43,7 +43,7 @@ public class ShooterIOSim implements ShooterIO {
   private double turretLastNext_radPs = 0;
 
   public ShooterIOSim() {
-    turret.setAngle(Turret.start_rad);
+    reset(Hood.start_rad, Turret.start_rad);
   }
 
   @Override
@@ -71,11 +71,20 @@ public class ShooterIOSim implements ShooterIO {
         turret.getInputVoltage(),
         turret.getCurrentDrawAmps(),
         turret.getCurrentDrawAmps() * turret.getInputVoltage() / RoboRioSim.getVInVoltage());
+    turret_rad = ioInputs.turret.mechanism_rad();
+    turret_radPs = ioInputs.turret.mechanism_radPs();
 
     // TODO: add collision for the turret
     flywheel.update(robotPeriod_s);
     hood.update(robotPeriod_s);
     turret.update(robotPeriod_s);
+  }
+
+  @Override
+  public void reset(double hood_rad, double turret_rad) {
+    flywheel.setAngularVelocity(0);
+    hood.setState(hood_rad + Hood.cmAngle_rad, 0);
+    turret.setState(turret_rad, 0);
   }
 
   @Override
