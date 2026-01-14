@@ -82,7 +82,7 @@ public class RobotContainer {
       case SIM:
         // create a maple-sim swerve drive simulation instance
         this.driveSimulation = new SwerveDriveSimulation(
-            DriveConstants.mapleSimConfig, new Pose2d(3, 3, new Rotation2d()));
+            DriveConstants.Swerve.mapleSimConfig, new Pose2d(3, 3, new Rotation2d()));
         // add the simulated drivetrain to the simulation field
         SimulatedArena.getInstance().addDriveTrainSimulation(driveSimulation);
         // Body body = new Body();

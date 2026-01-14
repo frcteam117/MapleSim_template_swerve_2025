@@ -1,16 +1,15 @@
 package frc.robot.subsystems.shooter;
 
-import static frc.robot.Constants.robotPeriod_s;
-
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import frc.robot.Constants.Robot;
 import frc.robot.subsystems.shooter.ShooterConstants.Flywheel;
 import frc.robot.subsystems.shooter.ShooterConstants.Hood;
 import frc.robot.subsystems.shooter.ShooterConstants.Turret;
-import frc.robot.util.logging.LogUtil.AngularMechanismState;
+import frc.robot.util.control.MechanismStates.AngularMechanismState;
 
 public class ShooterIOSim implements ShooterIO {
   // TODO: update to use LinearSystemId.identifyVelocitySystem once built
@@ -54,7 +53,7 @@ public class ShooterIOSim implements ShooterIO {
         flywheel.getInputVoltage(),
         flywheel.getCurrentDrawAmps(),
         flywheel.getCurrentDrawAmps() * flywheel.getInputVoltage() / RoboRioSim.getVInVoltage());
-    flywheel_radPs = ioInputs.flywheel.mechanism_radPs();
+    flywheel_radPs = ioInputs.flywheel.radPs();
 
     ioInputs.hood = new AngularMechanismState(
         hood.getAngleRads() - Hood.cmAngle_rad,
@@ -62,8 +61,8 @@ public class ShooterIOSim implements ShooterIO {
         hood_V,
         hood.getCurrentDrawAmps(),
         hood.getCurrentDrawAmps() * hood_V / RoboRioSim.getVInVoltage());
-    hood_rad = ioInputs.hood.mechanism_rad();
-    hood_radPs = ioInputs.hood.mechanism_radPs();
+    hood_rad = ioInputs.hood.rad();
+    hood_radPs = ioInputs.hood.radPs();
 
     ioInputs.turret = new AngularMechanismState(
         turret.getAngularPositionRad(),
@@ -71,13 +70,13 @@ public class ShooterIOSim implements ShooterIO {
         turret.getInputVoltage(),
         turret.getCurrentDrawAmps(),
         turret.getCurrentDrawAmps() * turret.getInputVoltage() / RoboRioSim.getVInVoltage());
-    turret_rad = ioInputs.turret.mechanism_rad();
-    turret_radPs = ioInputs.turret.mechanism_radPs();
+    turret_rad = ioInputs.turret.rad();
+    turret_radPs = ioInputs.turret.radPs();
 
     // TODO: add collision for the turret
-    flywheel.update(robotPeriod_s);
-    hood.update(robotPeriod_s);
-    turret.update(robotPeriod_s);
+    flywheel.update(Robot.codePeriod_s);
+    hood.update(Robot.codePeriod_s);
+    turret.update(Robot.codePeriod_s);
   }
 
   @Override

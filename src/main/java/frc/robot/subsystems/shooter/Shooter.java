@@ -1,7 +1,6 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.Constants.robotPeriod_s;
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 import edu.wpi.first.math.geometry.Pose3d;
@@ -10,13 +9,15 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.Robot;
 import frc.robot.subsystems.shooter.ShooterConstants.Flywheel;
 import frc.robot.subsystems.shooter.ShooterConstants.Hood;
 import frc.robot.subsystems.shooter.ShooterConstants.Turret;
 import frc.robot.util.SysIdUtil;
 import frc.robot.util.SysIdUtil.SysIdType;
-import frc.robot.util.logging.LogUtil.AngularMechanismState;
-import frc.robot.util.logging.LogUtil.AngularSetpoint;
+import frc.robot.util.control.MechanismStates.AngularMechanismState;
+import frc.robot.util.control.Setpoints.AngularSetpoint;
+import frc.robot.util.control.Setpoints.VoltageSetpoint;
 import org.littletonrobotics.junction.Logger;
 
 public class Shooter extends SubsystemBase {
@@ -85,8 +86,8 @@ public class Shooter extends SubsystemBase {
       new Pose3d(
           0.0,
           0.0,
-          .3 + ioInputs.flywheel.mechanism_radPs() / 200,
-          new Rotation3d(0, -ioInputs.hood.mechanism_rad(), ioInputs.turret.mechanism_rad()))
+          .3 + ioInputs.flywheel.radPs() / 200,
+          new Rotation3d(0, -ioInputs.hood.rad(), ioInputs.turret.rad()))
     });
   }
 
@@ -101,32 +102,25 @@ public class Shooter extends SubsystemBase {
   }
 
   public void setFlywheelVoltage(double V) {
-    Logger.recordOutput(
-        Flywheel.name + "/GoalSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
+    Logger.recordOutput(Flywheel.name + "/GoalSetpoint", new VoltageSetpoint(V));
     io.setFlywheelVoltage(V);
-    Logger.recordOutput(
-        Flywheel.name + "/NextSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
-    flywheelLastNextState = new TrapezoidProfile.State(ioInputs.flywheel.mechanism_radPs(), 0);
+    Logger.recordOutput(Flywheel.name + "/NextSetpoint", new VoltageSetpoint(V));
+    flywheelLastNextState = new TrapezoidProfile.State(ioInputs.flywheel.radPs(), 0);
   }
 
   public void setHoodVoltage(double V) {
-    Logger.recordOutput(
-        Hood.name + "/GoalSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
+    Logger.recordOutput(Hood.name + "/GoalSetpoint", new VoltageSetpoint(V));
     io.setHoodVoltage(V);
-    Logger.recordOutput(
-        Hood.name + "/NextSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
-    hoodLastNextState =
-        new TrapezoidProfile.State(ioInputs.hood.mechanism_rad(), ioInputs.hood.mechanism_radPs());
+    Logger.recordOutput(Hood.name + "/NextSetpoint", new VoltageSetpoint(V));
+    hoodLastNextState = new TrapezoidProfile.State(ioInputs.hood.rad(), ioInputs.hood.radPs());
   }
 
   public void setTurretVoltage(double V) {
-    Logger.recordOutput(
-        Turret.name + "/GoalSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
+    Logger.recordOutput(Turret.name + "/GoalSetpoint", new VoltageSetpoint(V));
     io.setTurretVoltage(V);
-    Logger.recordOutput(
-        Turret.name + "/NextSetpoint", new AngularSetpoint(V, Double.NaN, Double.NaN));
-    turretLastNextState = new TrapezoidProfile.State(
-        ioInputs.turret.mechanism_rad(), ioInputs.turret.mechanism_radPs());
+    Logger.recordOutput(Turret.name + "/NextSetpoint", new VoltageSetpoint(V));
+    turretLastNextState =
+        new TrapezoidProfile.State(ioInputs.turret.rad(), ioInputs.turret.radPs());
   }
 
   public void setGoals(double flywheel_radPs, double hood_rad, double turret_rad) {
@@ -136,24 +130,21 @@ public class Shooter extends SubsystemBase {
   }
 
   public void setFlywheelGoalVelocity(double radPs) {
-    Logger.recordOutput(
-        Flywheel.name + "/GoalSetpoint", new AngularSetpoint(Double.NaN, Double.NaN, radPs));
+    Logger.recordOutput(Flywheel.name + "/GoalSetpoint", new AngularSetpoint(Double.NaN, radPs));
     TrapezoidProfile.State nextState = flywheelProfile.calculate(
-        robotPeriod_s, flywheelLastNextState, new TrapezoidProfile.State(radPs, 0.0));
+        Robot.codePeriod_s, flywheelLastNextState, new TrapezoidProfile.State(radPs, 0.0));
     Logger.recordOutput(
-        Flywheel.name + "/NextSetpoint",
-        new AngularSetpoint(Double.NaN, Double.NaN, nextState.position));
+        Flywheel.name + "/NextSetpoint", new AngularSetpoint(Double.NaN, nextState.position));
     io.setFlywheelNextState(nextState.position);
     flywheelLastNextState = nextState;
   }
 
   public void setHoodGoalState(double rad, double radPs) {
-    Logger.recordOutput(Hood.name + "/GoalSetpoint", new AngularSetpoint(Double.NaN, rad, radPs));
+    Logger.recordOutput(Hood.name + "/GoalSetpoint", new AngularSetpoint(rad, radPs));
     TrapezoidProfile.State nextState = hoodProfile.calculate(
-        robotPeriod_s, hoodLastNextState, new TrapezoidProfile.State(rad, radPs));
+        Robot.codePeriod_s, hoodLastNextState, new TrapezoidProfile.State(rad, radPs));
     Logger.recordOutput(
-        Hood.name + "/NextSetpoint",
-        new AngularSetpoint(Double.NaN, nextState.position, nextState.velocity));
+        Hood.name + "/NextSetpoint", new AngularSetpoint(nextState.position, nextState.velocity));
     io.setHoodNextState(nextState.position, nextState.velocity);
     hoodLastNextState = nextState;
   }
@@ -163,12 +154,11 @@ public class Shooter extends SubsystemBase {
   }
 
   public void setTurretGoalState(double rad, double radPs) {
-    Logger.recordOutput(Turret.name + "/GoalSetpoint", new AngularSetpoint(Double.NaN, rad, radPs));
+    Logger.recordOutput(Turret.name + "/GoalSetpoint", new AngularSetpoint(rad, radPs));
     TrapezoidProfile.State nextState = turretProfile.calculate(
-        robotPeriod_s, turretLastNextState, new TrapezoidProfile.State(rad, radPs));
+        Robot.codePeriod_s, turretLastNextState, new TrapezoidProfile.State(rad, radPs));
     Logger.recordOutput(
-        Turret.name + "/NextSetpoint",
-        new AngularSetpoint(Double.NaN, nextState.position, nextState.velocity));
+        Turret.name + "/NextSetpoint", new AngularSetpoint(nextState.position, nextState.velocity));
     io.setTurretNextState(nextState.position, nextState.velocity);
     turretLastNextState = nextState;
   }

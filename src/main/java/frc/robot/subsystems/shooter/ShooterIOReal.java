@@ -8,7 +8,7 @@ import com.revrobotics.spark.SparkMax;
 import frc.robot.subsystems.shooter.ShooterConstants.Flywheel;
 import frc.robot.subsystems.shooter.ShooterConstants.Hood;
 import frc.robot.subsystems.shooter.ShooterConstants.Turret;
-import frc.robot.util.logging.LogUtil.AngularMechanismState;
+import frc.robot.util.control.MechanismStates.AngularMechanismState;
 
 public class ShooterIOReal implements ShooterIO {
   // Sparkmax objects
@@ -48,7 +48,7 @@ public class ShooterIOReal implements ShooterIO {
         flywheel.getBusVoltage() * flywheel.getAppliedOutput(),
         flywheel.getOutputCurrent(),
         flywheel.getOutputCurrent() * flywheel.getAppliedOutput());
-    flywheel_radPs = ioInputs.flywheel.mechanism_radPs();
+    flywheel_radPs = ioInputs.flywheel.radPs();
 
     ioInputs.hood = new AngularMechanismState(
         hoodEncoder.getPosition(),
@@ -56,8 +56,8 @@ public class ShooterIOReal implements ShooterIO {
         hood.getBusVoltage() * hood.getAppliedOutput(),
         hood.getOutputCurrent(),
         hood.getOutputCurrent() * hood.getAppliedOutput());
-    hood_rad = ioInputs.hood.mechanism_rad();
-    hood_radPs = ioInputs.hood.mechanism_radPs();
+    hood_rad = ioInputs.hood.rad();
+    hood_radPs = ioInputs.hood.radPs();
 
     ioInputs.turret = new AngularMechanismState(
         turretEncoder.getPosition(),
@@ -65,8 +65,8 @@ public class ShooterIOReal implements ShooterIO {
         turret.getBusVoltage() * turret.getAppliedOutput(),
         turret.getOutputCurrent(),
         turret.getOutputCurrent() * turret.getAppliedOutput());
-    turret_rad = ioInputs.turret.mechanism_rad();
-    turret_radPs = ioInputs.turret.mechanism_radPs();
+    turret_rad = ioInputs.turret.rad();
+    turret_radPs = ioInputs.turret.radPs();
   }
 
   @Override

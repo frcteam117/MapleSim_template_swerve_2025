@@ -62,22 +62,4 @@ public class LogUtil {
         V = new TunableDouble(key + "V", ff.getKv(), shouldPublish, ff::setKv),
         A = new TunableDouble(key + "A", ff.getKa(), shouldPublish, ff::setKa);
   }
-
-  public record AngularMechanismState(
-      double mechanism_rad,
-      double mechanism_radPs,
-      double stator_V,
-      double stator_A,
-      double supply_A) {}
-
-  public record LinearMechanismState(
-      double mechanism_m,
-      double mechanism_mPs,
-      double stator_V,
-      double stator_A,
-      double supply_A) {}
-
-  public record AngularSetpoint(double V, double rad, double radPs) {}
-
-  public record LinearSetpoint(double V, double m, double mPs) {}
 }

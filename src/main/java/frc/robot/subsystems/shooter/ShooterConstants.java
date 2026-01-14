@@ -1,13 +1,11 @@
 package frc.robot.subsystems.shooter;
 
-import static frc.robot.Constants.nominalVoltage_V;
-import static frc.robot.Constants.robotPeriod_s;
-
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import frc.robot.Constants.Robot;
 import frc.robot.util.UnitUtil;
 import frc.robot.util.logging.LogUtil;
 import frc.robot.util.logging.TunableBoolean;
@@ -33,14 +31,15 @@ public class ShooterConstants {
 
     // motion profiling
     public static final SimpleMotorFeedforward
-        realFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, robotPeriod_s),
-        simFF = new SimpleMotorFeedforward(0.0, 0.0198426988, 0.0, robotPeriod_s);
-    public static final PIDController realPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s),
-        simPID = new PIDController(.5, 0.0, 0.0, robotPeriod_s);
+        realFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simFF = new SimpleMotorFeedforward(0.0, 0.0198426988, 0.0, Robot.codePeriod_s);
+    public static final PIDController
+        realPID = new PIDController(0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simPID = new PIDController(.5, 0.0, 0.0, Robot.codePeriod_s);
 
     static {
       motorConfig
-          .voltageCompensation(nominalVoltage_V)
+          .voltageCompensation(Robot.nominal_V)
           .smartCurrentLimit(maxStator_A)
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)
@@ -54,6 +53,7 @@ public class ShooterConstants {
 
   public static class Hood {
     public static final String name = ShooterConstants.name + "/Hood";
+
     // physical constants
     public static final double moi_kgm2 = 0.05;
     public static final double mass_kg = 0.5;
@@ -75,14 +75,15 @@ public class ShooterConstants {
     public static final SparkMaxConfig motorConfig = new SparkMaxConfig();
 
     public static final ArmFeedforward
-        realFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0, robotPeriod_s),
-        simFF = new ArmFeedforward(0.0, 1.69615385, 0.16, .02, robotPeriod_s);
-    public static final PIDController realPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s),
-        simPID = new PIDController(5, 0.0, 0.0, robotPeriod_s);
+        realFF = new ArmFeedforward(0.0, 0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simFF = new ArmFeedforward(0.0, 1.69615385, 0.16, .02, Robot.codePeriod_s);
+    public static final PIDController
+        realPID = new PIDController(0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simPID = new PIDController(5, 0.0, 0.0, Robot.codePeriod_s);
 
     static {
       motorConfig
-          .voltageCompensation(nominalVoltage_V)
+          .voltageCompensation(Robot.nominal_V)
           .smartCurrentLimit(maxStator_A)
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)
@@ -113,14 +114,15 @@ public class ShooterConstants {
     public static final SparkMaxConfig motorConfig = new SparkMaxConfig();
 
     public static final SimpleMotorFeedforward
-        realFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, robotPeriod_s),
-        simFF = new SimpleMotorFeedforward(0.013818, 0.39684, 0.010878, robotPeriod_s);
-    public static final PIDController realPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s),
-        simPID = new PIDController(0.0, 0.0, 0.0, robotPeriod_s);
+        realFF = new SimpleMotorFeedforward(0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simFF = new SimpleMotorFeedforward(0.013818, 0.39684, 0.010878, Robot.codePeriod_s);
+    public static final PIDController
+        realPID = new PIDController(0.0, 0.0, 0.0, Robot.codePeriod_s),
+        simPID = new PIDController(0.0, 0.0, 0.0, Robot.codePeriod_s);
 
     static {
       motorConfig
-          .voltageCompensation(nominalVoltage_V)
+          .voltageCompensation(Robot.nominal_V)
           .smartCurrentLimit(maxStator_A)
           .encoder
           .positionConversionFactor(UnitUtil.rotTorad(1) / reduction)

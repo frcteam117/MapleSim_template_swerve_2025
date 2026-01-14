@@ -1,6 +1,6 @@
 package frc.robot.subsystems.shooter;
 
-import frc.robot.util.logging.LogUtil.AngularMechanismState;
+import frc.robot.util.control.MechanismStates.AngularMechanismState;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ShooterIO {

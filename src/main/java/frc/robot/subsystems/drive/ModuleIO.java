@@ -13,12 +13,14 @@
 
 package frc.robot.subsystems.drive;
 
+import frc.robot.util.control.MechanismStates.LinearMechanismState;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ModuleIO {
   @AutoLog
   public static class ModuleIOInputs {
     public boolean driveConnected = false;
+    public LinearMechanismState wheel;
     public double drivePosition_rad = 0.0;
     public double driveVelocity_radPs = 0.0;
     public double driveVoltage_V = 0.0;
